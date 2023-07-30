@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "./math/vec.h"
+#include "../math/vec.h"
 
 enum CameraMovement{
     NONE = 0x0, 

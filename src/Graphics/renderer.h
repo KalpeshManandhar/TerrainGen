@@ -7,7 +7,7 @@
 #include "./shader.h"
 #include "./mesh.h"
 
-#include "./math/vec.h"
+#include "../math/vec.h"
 
 struct Renderer{
     GLFWwindow *window;

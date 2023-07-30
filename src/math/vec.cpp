@@ -131,6 +131,17 @@ float projection(Vec3f of, Vec3f on){
 
 
 
+
+
+float smoothstep(float x){
+    x = Clamp(0.0f,x,1.0f);
+    return x * x * (3.0f - 2.0f * x);
+}
+
+
+
+
+
 // quick inverse square root from quake III 
 float Q_rsqrt(float number)              
 {

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
-#include "math/vec.h"
+#include "../math/vec.h"
 
 #define ERROR_CHECK(cond, message)  (!(cond) && printf(message))
 #define glGetUniformLocation   glGetUniformLocation_ex

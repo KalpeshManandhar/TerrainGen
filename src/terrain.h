@@ -36,11 +36,14 @@ struct TerrainGenerator{
 
     Array<TerrainChunk> chunks;
     bool chunkGrid[256][256]={false};
+    TerrainChunk generatedChunks[3][3];
+    int generatedNo = 0;
 };
 
 
 
 void addChunk(TerrainGenerator *gen, Vec3f chunkPos, ChunkType type);
 uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ);
+void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA);
 
 

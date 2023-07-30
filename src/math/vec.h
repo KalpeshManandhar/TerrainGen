@@ -95,6 +95,10 @@ T lerp(T a,T b, float t){
     return a+(b-a)*t;
 }
 
+float smoothstep(float x);
+
+
+
 
 
 template <int m, int n>

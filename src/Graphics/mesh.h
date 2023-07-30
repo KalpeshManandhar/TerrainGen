@@ -3,7 +3,7 @@
 #include <vector>
 #define Array std::vector 
 
-#include "math/vec.h"
+#include "../math/vec.h"
 
 struct Mesh{
     Array<Vec3f> vertices;

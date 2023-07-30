@@ -1,8 +1,8 @@
 #include "terrain.h"
-#include "mesh.h"
 #include "noise.h"
-#include "renderer.h"
-#include "camera.h"
+#include "./Graphics/mesh.h"
+#include "./Graphics/renderer.h"
+#include "./Graphics/camera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
@@ -88,6 +88,26 @@ int main(){
     camera.init({0,0,1},{0,1,0},{1,0,0}, 0.1f,100.0f, r.width, r.height);
     camera.pos = {0,0,3};
 
+    Object3D m;
+    addChunk(&gen, Vec3f{0,20,0}, CHUNK_HILL);
+    addChunk(&gen, Vec3f{256,10,0}, CHUNK_HILL);
+
+    chunkObjects.push_back(m);
+    chunkObjects.push_back(m);
+    // chunkObjects.push_back(m);
+    // chunkObjects.push_back(m);
+    // createMesh(&chunkObjects[0].mesh, gen.chunks[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    // createMesh(&chunkObjects[1].mesh, gen.chunks[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    // chunkObjects[0].origin = gen.chunks[0].chunkOrigin;
+    // chunkObjects[1].origin = gen.chunks[1].chunkOrigin;
+    stitchTerrain(&gen.chunks[0],&gen.chunks[1], 128, 0.5f, 1.0f);
+    createMesh(&chunkObjects[0].mesh, gen.chunks[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    createMesh(&chunkObjects[1].mesh, gen.chunks[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    chunkObjects[0].origin = gen.chunks[0].chunkOrigin + Vec3f{0,0,256};
+    chunkObjects[1].origin = gen.chunks[1].chunkOrigin + Vec3f{0,0,256};
+    
+    // gen.chunkGrid[chunkNox][chunkNoz] = true;
+
     
     while (!glfwWindowShouldClose(r.window)){
         glfwPollEvents();
@@ -104,7 +124,7 @@ int main(){
 
         Mat4 view = camera.lookat(camera.pos - camera.front, Vec3f{0,1,0});
 
-        glm::mat4x4 projs = glm::perspective(glm::radians(45.0f), (float)r.width/r.height, 0.1f,100.0f);
+        glm::mat4x4 projs = glm::perspective(glm::radians(45.0f), (float)r.width/r.height, 0.1f,150.0f);
         Mat4 p = *((Mat4*)&projs);
         Mat4 proj = transpose(p);
 
@@ -114,30 +134,34 @@ int main(){
         // printf("Currently above: %d, %d \n", cameraChunkPosX, cameraChunkPosZ);
         
         // check if a 3x3 
-        for (int i = -1; i<=1; i++){
-            int chunkNox = cameraChunkPosX+i;
-            if (chunkNox < 0 || chunkNox > 255) continue;
-            
-            for (int j = -1; j<=1; j++){
-                int chunkNoz = cameraChunkPosZ+j;
+        // for (int i = -1; i<=1; i++){
+        //     int chunkNox = cameraChunkPosX+i;
+        //     if (chunkNox < 0 || chunkNox > 255) continue;
 
-                if (chunkNoz < 0 || chunkNoz > 255) continue;
-                // if chunk isnt generated 
-                if (!gen.chunkGrid[chunkNox][chunkNoz]){
-                    // generate chunk data
-                    addChunk(&gen, Vec3f{(float)cameraChunkPosX * CHUNK_SIZE, 0, (float)cameraChunkPosZ *CHUNK_SIZE}, CHUNK_HILL);
+        //     for (int j = -1; j<=1; j++){
+        //         int chunkNoz = cameraChunkPosZ+j;
 
-                    // add new object
-                    Object3D m;
-                    chunkObjects.push_back(m);
+        //         if (chunkNoz < 0 || chunkNoz > 255) continue;
+        //         // if chunk isnt generated 
+        //         if (!gen.chunkGrid[chunkNox][chunkNoz]){
+        //             // generate chunk data
+        //             addChunk(&gen, Vec3f{(float)chunkNox * CHUNK_SIZE, 0, (float)chunkNoz *CHUNK_SIZE}, CHUNK_HILL);
+
+        //             // add new object
+        //             Object3D m;
+        //             chunkObjects.push_back(m);
                     
-                    int totalChunks = chunkObjects.size();
-                    createMesh(&chunkObjects[totalChunks-1].mesh, gen.chunks[totalChunks-1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-                    chunkObjects[totalChunks - 1].origin = gen.chunks[totalChunks - 1].chunkOrigin;
-                    gen.chunkGrid[chunkNox][chunkNoz] = true;
-                }
-            }
-        }
+        //             int totalChunks = chunkObjects.size();
+        //             createMesh(&chunkObjects[totalChunks-1].mesh, gen.chunks[totalChunks-1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+        //             chunkObjects[totalChunks - 1].origin = gen.chunks[totalChunks - 1].chunkOrigin;
+        //             gen.chunkGrid[chunkNox][chunkNoz] = true;
+        //         }
+        //     }
+        // }
+
+        // add new object
+        
+
 
         for (int i =0; i<chunkObjects.size(); i++){
         // for (int i =0; i<1; i++){
@@ -145,7 +169,7 @@ int main(){
             
 
             if (dotProduct(camera.pos, worldCoords) < 1024*1024){
-                Mat4 model = translate(worldCoords.x, worldCoords.y, worldCoords.z)*scaleAboutOrigin(0.1,1,0.1);
+                Mat4 model = translate(worldCoords.x*0.1f,0, worldCoords.z*0.1f)*scaleAboutOrigin(0.1,1,0.1);
                 // Mat4 model = translate(0,0,0);
                 drawMesh(&r, &chunkObjects[i].mesh, &terrainShader, model, view, proj);
             }

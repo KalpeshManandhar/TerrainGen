@@ -1,0 +1,7 @@
+*.exe
+*.dll
+*.pdb
+test*
+*.ilk
+
+x64
