@@ -193,5 +193,53 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
             }
         }
     }
+    // for z boundary
+    else {
+        // calculate the x at respective depths of the chunks
+        int z1 = (boundaryIndexA == 0)?d1:boundaryIndexA-d1;
+        int z2 = (boundaryIndexB == 0)?d2:boundaryIndexB-d2;
 
+        // start and end for the changes
+        int startZ1 = (boundaryIndexA == 0)?1:z1;
+        int startZ2 = (boundaryIndexB == 0)?1:z2;
+        int endZ1 = (boundaryIndexA == 0)?z1:boundaryIndexA-1;
+        int endZ2 = (boundaryIndexB == 0)?z2:boundaryIndexB-1;
+
+        // interpolate the new values at the border
+        for (int changeX =0; changeX<a->sizez; ++changeX){
+            float borderYA = a->vertices[changeX + boundaryIndexA * a->sizez].y;
+            float borderYB = b->vertices[changeX + boundaryIndexB * b->sizez].y;
+            float newBorderY = lerp(borderYA, borderYB, influenceFactorB);
+            // float newBorderY = lerp(borderYA, borderYB, t);
+            a->vertices[changeX + boundaryIndexA * a->sizez].y = newBorderY;
+            b->vertices[changeX + boundaryIndexB * b->sizez].y = newBorderY;
+        }
+
+        // calculate the new y values for chunk A
+        // a1 and b1 are the inner depth y and outer border y
+        for (int changeX =0; changeX<a->sizez; ++changeX){
+            float a1 = a->vertices[changeX + z1 * a->sizez].y;
+            float b1 = a->vertices[changeX + boundaryIndexA  * a->sizez].y;
+            for (int changeZ=startZ1; changeZ<= endZ1; ++changeZ){
+                float t = fabs((float)(changeZ - z1)/d1);
+                float oldy = a->vertices[changeX + changeZ * a->sizez].y;
+                float newY = lerp(a1, b1, t);
+                newY +=  + oldy*p*(1.0f-t);
+                a->vertices[changeX + changeZ * a->sizez].y = newY;
+            }
+        }
+        // calculate the new y values for chunk B
+        // b2 and a2 are the outer border y and inner depth y
+        for (int changeX =0; changeX<b->sizez; ++changeX){
+            float a2 = b->vertices[changeX + z2 * b->sizez].y;
+            float b2 = b->vertices[changeX + boundaryIndexB * b->sizez].y;
+            for (int changeZ=startZ2; changeZ<= endZ2; ++changeZ){
+                float t = fabs((float)(changeZ - z2)/d2);
+                float oldy = b->vertices[changeX + changeZ * b->sizez].y;
+                float newY = lerp(a2, b2, t);
+                newY +=  + oldy*p*(1.0f-t);
+                b->vertices[changeX + changeZ * b->sizez].y = newY;
+            }
+        }
+    }
 }
