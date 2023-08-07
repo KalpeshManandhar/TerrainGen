@@ -188,7 +188,7 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
                     float t = fabs((float)(changeX - depthPoint)/xStride);
                     float oldy = a->vertices[changeX + changeZ * a->sizez].y;
                     float newY = lerp(a1, b1, t);
-                    newY += oldy*p*p*(1.0f-t);
+                    newY += oldy*p*0.01f*(1.0f-t);
                     a->vertices[changeX + changeZ * a->sizez].y = newY;
                 }
             }
@@ -218,7 +218,7 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
                     float t = fabs((float)(changeX - depthPoint)/xStride);
                     float oldy = b->vertices[changeX + changeZ * b->sizez].y;
                     float newY = lerp(a2, b2, t);
-                    newY += oldy*p*p*(1.0f-t);
+                    newY += oldy*p*0.01f*(1.0f-t);
                     b->vertices[changeX + changeZ * b->sizez].y = newY;
                 }
             }
@@ -267,7 +267,7 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
                     float t = fabs((float)(changeZ - depthPoint)/zStride);
                     float oldy = a->vertices[changeX + changeZ * a->sizez].y;
                     float newY = lerp(a1, b1, t);
-                    newY += oldy*p*p*(1.0f-t);
+                    newY += oldy*p*0.01f*(1.0f-t);
                     a->vertices[changeX + changeZ * a->sizez].y = newY;
                 }
             }
@@ -297,7 +297,7 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
                     float t = fabs((float)(changeZ - depthPoint)/zStride);
                     float oldy = b->vertices[changeX + changeZ * b->sizez].y;
                     float newY = lerp(a2, b2, t);
-                    newY += oldy*p*p*(1.0f-t);
+                    newY += oldy*p*0.01f*(1.0f-t);
                     b->vertices[changeX + changeZ * b->sizez].y = newY;
                 }
             }
