@@ -108,7 +108,9 @@ uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ){
     p is how much of the previous terrain affects the 
     p + q = 1
 
-    new y = oldy * inf factor + (a + (b-a) * t) * (1-inf factor)
+    t = |(current - inner)/(inner - border)|
+    newY = lerp(inner, border, t) + oldy*p*(1.0f-t);
+
 */
 void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA){
     int boundaryIndexA, boundaryIndexB;
@@ -144,101 +146,160 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
     int d2 = ndepth * (influenceFactorA);
 
 
-    // if the boundary of the two chunks is x = __
+    // if the boundary of the two chunks is x 
     if (xBoundary){
         // calculate the x at respective depths of the chunks
         int x1 = (boundaryIndexA == 0)?d1:boundaryIndexA-d1;
         int x2 = (boundaryIndexB == 0)?d2:boundaryIndexB-d2;
 
-        // start and end for the changes
-        int startX1 = (boundaryIndexA == 0)?1:x1;
-        int startX2 = (boundaryIndexB == 0)?1:x2;
-        int endX1 = (boundaryIndexA == 0)?x1:boundaryIndexA-1;
-        int endX2 = (boundaryIndexB == 0)?x2:boundaryIndexB-1;
-
-        // interpolate the new values at the border
+        // compute the new values at the border
         for (int changeZ =0; changeZ<a->sizez; ++changeZ){
             float borderYA = a->vertices[boundaryIndexA + changeZ * a->sizez].y;
             float borderYB = b->vertices[boundaryIndexB + changeZ * b->sizez].y;
+
             float newBorderY = lerp(borderYA, borderYB, influenceFactorB);
-            // float newBorderY = lerp(borderYA, borderYB, t);
+            
             a->vertices[boundaryIndexA + changeZ * a->sizez].y = newBorderY;
             b->vertices[boundaryIndexB + changeZ * b->sizez].y = newBorderY;
         }
 
         // calculate the new y values for chunk A
-        // a1 and b1 are the inner depth y and outer border y
-        for (int changeZ =0; changeZ<a->sizez; ++changeZ){
-            float a1 = a->vertices[x1 + changeZ * a->sizez].y;
-            float b1 = a->vertices[boundaryIndexA + changeZ * a->sizez].y;
-            for (int changeX=startX1; changeX<= endX1; ++changeX){
-                float t = fabs((float)(changeX - x1)/d1);
-                float oldy = a->vertices[changeX + changeZ * a->sizez].y;
-                float newY = lerp(a1, b1, t);
-                newY +=  + oldy*p*(1.0f-t);
-                a->vertices[changeX + changeZ * a->sizez].y = newY;
+        if (d1 > 0){
+            for (int changeZ =0; changeZ<a->sizez; ++changeZ){
+                // stitching shape is triangle
+                // t1 is t value for line from center to corner
+                int zDistFromMid = abs(changeZ - a->sizez/2);
+                float t1 = (float)zDistFromMid*2.0f/a->sizez;
+
+                // start and end for the changes
+                int startX1 = (boundaryIndexA == 0)?1:x1 + t1 * d1+1;
+                int endX1 = (boundaryIndexA == 0)?x1 - t1 * d1:boundaryIndexA;
+                int xStride = endX1 - startX1;
+
+                // inner depth point
+                int depthPoint = (boundaryIndexA == 0)?endX1:startX1;
+
+                // a = inner point value
+                // b = boundary point value
+                float a1 = a->vertices[depthPoint + changeZ * a->sizez].y;
+                float b1 = a->vertices[boundaryIndexA + changeZ * a->sizez].y;
+
+                for (int changeX=startX1; changeX< endX1; ++changeX){
+                    float t = fabs((float)(changeX - depthPoint)/xStride);
+                    float oldy = a->vertices[changeX + changeZ * a->sizez].y;
+                    float newY = lerp(a1, b1, t);
+                    newY += oldy*p*p*(1.0f-t);
+                    a->vertices[changeX + changeZ * a->sizez].y = newY;
+                }
             }
         }
         // calculate the new y values for chunk B
-        // b2 and a2 are the outer border y and inner depth y
-        for (int changeZ =0; changeZ<b->sizez; ++changeZ){
-            float a2 = b->vertices[x2 + changeZ * b->sizez].y;
-            float b2 = b->vertices[boundaryIndexB + changeZ * b->sizez].y;
-            for (int changeX=startX2; changeX<= endX2; ++changeX){
-                float t = fabs((float)(changeX - x2)/d2);
-                float oldy = b->vertices[changeX + changeZ * b->sizez].y;
-                float newY = lerp(a2, b2, t);
-                newY +=  + oldy*p*(1.0f-t);
-                b->vertices[changeX + changeZ * b->sizez].y = newY;
+        if (d2 >0){
+            for (int changeZ =0; changeZ<b->sizez; ++changeZ){
+                // stitching shape is triangle
+                // t1 is t value for line from center to corner
+                int zDistFromMid = abs(changeZ - b->sizez/2);
+                float t2 = (float)zDistFromMid*2.0f/b->sizez;
+
+                // start and end for the changes
+                int startX2 = (boundaryIndexB == 0)?1:x2 + t2 * d2;
+                int endX2 = (boundaryIndexB == 0)?x2 - t2 * d2:boundaryIndexB;
+                int xStride = endX2 - startX2;
+
+                // inner depth point
+                int depthPoint = (boundaryIndexB == 0)?endX2:startX2;
+                
+                // a = inner point value
+                // b = boundary point value
+                float a2 = b->vertices[depthPoint + changeZ * b->sizez].y;
+                float b2 = b->vertices[boundaryIndexB + changeZ * b->sizez].y;
+
+                for (int changeX=startX2; changeX< endX2; ++changeX){
+                    float t = fabs((float)(changeX - depthPoint)/xStride);
+                    float oldy = b->vertices[changeX + changeZ * b->sizez].y;
+                    float newY = lerp(a2, b2, t);
+                    newY += oldy*p*p*(1.0f-t);
+                    b->vertices[changeX + changeZ * b->sizez].y = newY;
+                }
             }
         }
     }
     // for z boundary
     else {
-        // calculate the x at respective depths of the chunks
+        // calculate the z at respective inner depths of the chunks
         int z1 = (boundaryIndexA == 0)?d1:boundaryIndexA-d1;
         int z2 = (boundaryIndexB == 0)?d2:boundaryIndexB-d2;
 
-        // start and end for the changes
-        int startZ1 = (boundaryIndexA == 0)?1:z1;
-        int startZ2 = (boundaryIndexB == 0)?1:z2;
-        int endZ1 = (boundaryIndexA == 0)?z1:boundaryIndexA-1;
-        int endZ2 = (boundaryIndexB == 0)?z2:boundaryIndexB-1;
-
-        // interpolate the new values at the border
+        // compute the new values at the border
         for (int changeX =0; changeX<a->sizez; ++changeX){
             float borderYA = a->vertices[changeX + boundaryIndexA * a->sizez].y;
             float borderYB = b->vertices[changeX + boundaryIndexB * b->sizez].y;
+
             float newBorderY = lerp(borderYA, borderYB, influenceFactorB);
-            // float newBorderY = lerp(borderYA, borderYB, t);
+            
             a->vertices[changeX + boundaryIndexA * a->sizez].y = newBorderY;
             b->vertices[changeX + boundaryIndexB * b->sizez].y = newBorderY;
         }
 
         // calculate the new y values for chunk A
-        // a1 and b1 are the inner depth y and outer border y
-        for (int changeX =0; changeX<a->sizez; ++changeX){
-            float a1 = a->vertices[changeX + z1 * a->sizez].y;
-            float b1 = a->vertices[changeX + boundaryIndexA  * a->sizez].y;
-            for (int changeZ=startZ1; changeZ<= endZ1; ++changeZ){
-                float t = fabs((float)(changeZ - z1)/d1);
-                float oldy = a->vertices[changeX + changeZ * a->sizez].y;
-                float newY = lerp(a1, b1, t);
-                newY +=  + oldy*p*(1.0f-t);
-                a->vertices[changeX + changeZ * a->sizez].y = newY;
+        if (d1 > 0){
+            for (int changeX =0; changeX<a->sizez; ++changeX){
+                // stitching shape is triangle
+                // t1 is t value for line from center to corner
+                int xDistFromMid = abs(changeX - a->sizex/2);
+                float t1 = (float)xDistFromMid*2.0f/a->sizex;
+
+                // start and end for the changes
+                int startZ1 = (boundaryIndexA == 0)?1:z1 + t1 * d1;
+                int endZ1 = (boundaryIndexA == 0)?z1 - t1 * d1:boundaryIndexA;
+                int zStride = endZ1 - startZ1;
+
+                // inner depth point
+                int depthPoint = (boundaryIndexA == 0)?endZ1:startZ1;
+                
+                // a is value at inner depth
+                // b is value at border
+                float a1 = a->vertices[changeX + depthPoint * a->sizez].y;
+                float b1 = a->vertices[changeX + boundaryIndexA  * a->sizez].y;
+
+
+                for (int changeZ=startZ1; changeZ< endZ1; ++changeZ){
+                    float t = fabs((float)(changeZ - depthPoint)/zStride);
+                    float oldy = a->vertices[changeX + changeZ * a->sizez].y;
+                    float newY = lerp(a1, b1, t);
+                    newY += oldy*p*p*(1.0f-t);
+                    a->vertices[changeX + changeZ * a->sizez].y = newY;
+                }
             }
         }
         // calculate the new y values for chunk B
-        // b2 and a2 are the outer border y and inner depth y
-        for (int changeX =0; changeX<b->sizez; ++changeX){
-            float a2 = b->vertices[changeX + z2 * b->sizez].y;
-            float b2 = b->vertices[changeX + boundaryIndexB * b->sizez].y;
-            for (int changeZ=startZ2; changeZ<= endZ2; ++changeZ){
-                float t = fabs((float)(changeZ - z2)/d2);
-                float oldy = b->vertices[changeX + changeZ * b->sizez].y;
-                float newY = lerp(a2, b2, t);
-                newY +=  + oldy*p*(1.0f-t);
-                b->vertices[changeX + changeZ * b->sizez].y = newY;
+        if (d2 > 0){
+            for (int changeX =0; changeX<b->sizex; ++changeX){
+                // stitching shape is triangle
+                // t is t value for line from center to corner
+                int xDistFromMid = abs(changeX - b->sizex/2);
+                float t2 = (float)xDistFromMid*2.0f/b->sizex;
+
+                // start and end for the changes
+                int startZ2 = (boundaryIndexB == 0)?1:z2 + t2 * d2;
+                int endZ2 = (boundaryIndexB == 0)?z2 - t2 * d2:boundaryIndexB;
+                int zStride = endZ2 - startZ2;
+
+                // inner depth point
+                int depthPoint = (boundaryIndexB == 0)?endZ2:startZ2;
+                
+                // a is value at inner depth
+                // b is value at border
+                float a2 = b->vertices[changeX + depthPoint * b->sizez].y;
+                float b2 = b->vertices[changeX + boundaryIndexB * b->sizez].y;
+
+                for (int changeZ=startZ2; changeZ< endZ2; ++changeZ){
+                    float t = fabs((float)(changeZ - depthPoint)/zStride);
+                    float oldy = b->vertices[changeX + changeZ * b->sizez].y;
+                    float newY = lerp(a2, b2, t);
+                    newY += oldy*p*p*(1.0f-t);
+                    b->vertices[changeX + changeZ * b->sizez].y = newY;
+                }
             }
         }
     }

@@ -90,9 +90,13 @@ int main(){
 
     Object3D m;
     addChunk(&gen, Vec3f{0,20,0}, CHUNK_HILL);
-    addChunk(&gen, Vec3f{256,10,0}, CHUNK_HILL);
+    addChunk(&gen, Vec3f{256,20,0}, CHUNK_HILL);
     addChunk(&gen, Vec3f{256,40,256}, CHUNK_HILL);
+    addChunk(&gen, Vec3f{256,50,512}, CHUNK_HILL);
+    addChunk(&gen, Vec3f{512,30,256}, CHUNK_HILL);
 
+    chunkObjects.push_back(m);
+    chunkObjects.push_back(m);
     chunkObjects.push_back(m);
     chunkObjects.push_back(m);
     chunkObjects.push_back(m);
@@ -102,14 +106,21 @@ int main(){
     // createMesh(&chunkObjects[1].mesh, gen.chunks[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
     // chunkObjects[0].origin = gen.chunks[0].chunkOrigin;
     // chunkObjects[1].origin = gen.chunks[1].chunkOrigin;
-    stitchTerrain(&gen.chunks[0],&gen.chunks[1], 128, 0.5f, 1.0f);
-    stitchTerrain(&gen.chunks[2],&gen.chunks[1], 128, 0.5f, 1.0f);
+    stitchTerrain(&gen.chunks[0],&gen.chunks[1], 100, 0.5f, 0.5f);
+    stitchTerrain(&gen.chunks[2],&gen.chunks[1], 100, 0.5f, 0.5f);
+    stitchTerrain(&gen.chunks[3],&gen.chunks[2], 100, 0.5f, 0.5f);
+    // stitchTerrain(&gen.chunks[3],&gen.chunks[1], 100, 0.5f, 1.0f);
+    stitchTerrain(&gen.chunks[2],&gen.chunks[4], 100, 0.5f, 0.5f);
     createMesh(&chunkObjects[0].mesh, gen.chunks[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
     createMesh(&chunkObjects[1].mesh, gen.chunks[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
     createMesh(&chunkObjects[2].mesh, gen.chunks[2].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    chunkObjects[0].origin = gen.chunks[0].chunkOrigin + Vec3f{0,0,256};
-    chunkObjects[1].origin = gen.chunks[1].chunkOrigin + Vec3f{0,0,256};
-    chunkObjects[2].origin = gen.chunks[2].chunkOrigin + Vec3f{0,0,256};
+    createMesh(&chunkObjects[3].mesh, gen.chunks[3].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    createMesh(&chunkObjects[4].mesh, gen.chunks[4].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    chunkObjects[0].origin = gen.chunks[0].chunkOrigin;
+    chunkObjects[1].origin = gen.chunks[1].chunkOrigin;
+    chunkObjects[2].origin = gen.chunks[2].chunkOrigin;
+    chunkObjects[3].origin = gen.chunks[3].chunkOrigin;
+    chunkObjects[4].origin = gen.chunks[4].chunkOrigin;
     
     // gen.chunkGrid[chunkNox][chunkNoz] = true;
 
