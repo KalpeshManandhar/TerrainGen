@@ -3,10 +3,11 @@
 #include <vector>
 #define Array std::vector
 #include "./math/vec.h"
-
+#include "./Allocator/freeListAllocator.h"
 
 #define CHUNK_SIZE 256
 #define VISIBLE_CHUNK_RADIUS 1
+
 
 
 enum ChunkType{
@@ -17,16 +18,15 @@ enum ChunkType{
     CHUNK_PLAIN
 };
 
-struct TerrainChunk{
+typedef struct TerrainChunk{
     int sizex = CHUNK_SIZE;
     int sizez = CHUNK_SIZE;
 
     
     Vec3f chunkOrigin;
     Vec3f *vertices;
-
-    
-};
+    // float *yValues;
+}*TerrainChunkPtr;
 
 
 struct TerrainGenerator{
@@ -34,10 +34,11 @@ struct TerrainGenerator{
     int noiseMapw;
     int noiseMaph;
 
-    Array<TerrainChunk> chunks;
-    bool chunkGrid[256][256]={false};
-    TerrainChunk generatedChunks[3][3];
-    int generatedNo = 0;
+    FreeListAllocator allocator;
+    TerrainChunkPtr chunkGrid[256][256]={NULL};
+
+    TerrainGenerator();
+    ~TerrainGenerator();
 };
 
 
@@ -45,5 +46,5 @@ struct TerrainGenerator{
 void addChunk(TerrainGenerator *gen, Vec3f chunkPos, ChunkType type);
 uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ);
 void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA);
-
+void proceduralGenerate(TerrainGenerator *gen, Vec2f cameraPos, Vec3f cameraFront);
 

@@ -38,13 +38,18 @@ static int setupMesh(Mesh *m){
 
 
 int createMesh(Mesh *m, Vec3f *vertices, int nvertices, uint32_t *indices, int nindices){
-    for (int i = 0; i < nvertices; i++){
+    size_t verticesSize = sizeof(*vertices) * nvertices;
+    size_t indicesSize = sizeof(*indices) * nindices;
+    m->vertices.reserve(verticesSize);
+    m->indices.reserve(verticesSize);
+    size_t a = (size_t)m->vertices.data();
+    // memcpy(m->vertices.data(), vertices, verticesSize);
+    // memcpy(m->indices.data(), indices, indicesSize);
+    for (int i=0; i< nvertices; i++)
         m->vertices.push_back(vertices[i]);
-    }
-
-    for (int i = 0; i < nindices; i++){
+    for (int i=0; i< nindices; i++)
         m->indices.push_back(indices[i]);
-    }
+
     setupMesh(m);    
     return 0;
 }

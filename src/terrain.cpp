@@ -304,3 +304,9 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
         }
     }
 }
+
+
+
+void proceduralGenerate(TerrainGenerator *gen, Vec2f cameraPos){
+
+}
