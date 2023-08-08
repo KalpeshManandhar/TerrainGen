@@ -4,7 +4,7 @@
 
 #ifdef _WIN32
 #define PLATFORM_WINDOWS
-#include <memoryapi.h>
+#include <windows.h>
 #endif
 
 #ifdef __linux__

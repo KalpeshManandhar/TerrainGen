@@ -21,7 +21,7 @@ enum ChunkType{
 typedef struct TerrainChunk{
     Vec3f *vertices;
     Vec3f chunkOrigin;
-}*TerrainChunkPtr;
+};
 
 struct TerrainGenerator{
     float *noiseMap;
@@ -35,13 +35,13 @@ struct TerrainGenerator{
     int sizez;
 
     TerrainGenerator(int n = CHUNK_SIZE);
-    ~TerrainGenerator();
+    // ~TerrainGenerator();
 };
 
 
 
-void addChunk(TerrainGenerator *gen, Vec3f chunkPos, ChunkType type);
+void addChunk(TerrainGenerator *gen, float chunkY, ChunkType type, Vec2i gridPos);
 uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ);
-void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA);
+void stitchTerrain(TerrainGenerator *gen, TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA);
 void proceduralGenerate(TerrainGenerator *gen, Vec2f cameraPos, Vec3f cameraFront);
 

@@ -1,5 +1,5 @@
-#include "terrain.h"
-#include "Allocator/allocator.h"
+#include "./terrain.h"
+#include "./Allocator/allocator.h"
 
 #define ALLOCATOR_INITIAL 51200 // 200mb 
 #define PAGE_SIZE 4096
@@ -16,9 +16,10 @@ TerrainGenerator::TerrainGenerator(int dim){
 
 
 
-void addChunk(TerrainGenerator *gen, Vec3f chunkPos, ChunkType type, Vec2i gridPos){
+void addChunk(TerrainGenerator *gen, float chunkY, ChunkType type, Vec2i gridPos){
     TerrainChunk chunk;
     chunk.vertices = (Vec3f *)freeListAlloc(&gen->allocator);
+    Vec3f chunkPos = {gridPos.x * gen->sizex, chunkY, gridPos.y * gen->sizez};
 
     for (int i=0; i< gen->sizex * gen->sizez; i++){
         Vec3f vertex;
