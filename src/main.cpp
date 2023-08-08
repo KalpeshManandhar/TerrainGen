@@ -106,11 +106,11 @@ int main(){
     // createMesh(&chunkObjects[1].mesh, gen.chunks[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
     // chunkObjects[0].origin = gen.chunks[0].chunkOrigin;
     // chunkObjects[1].origin = gen.chunks[1].chunkOrigin;
-    stitchTerrain(&gen.chunks[0],&gen.chunks[1], 100, 0.5f, 0.5f);
-    stitchTerrain(&gen.chunks[2],&gen.chunks[1], 100, 0.5f, 0.5f);
-    stitchTerrain(&gen.chunks[3],&gen.chunks[2], 100, 0.5f, 0.5f);
-    // stitchTerrain(&gen.chunks[3],&gen.chunks[1], 100, 0.5f, 1.0f);
-    stitchTerrain(&gen.chunks[2],&gen.chunks[4], 100, 0.5f, 0.5f);
+    // stitchTerrain(&gen.chunks[0],&gen.chunks[1], 100, 0.5f, 0.5f);
+    // stitchTerrain(&gen.chunks[2],&gen.chunks[1], 100, 0.5f, 0.5f);
+    // stitchTerrain(&gen.chunks[3],&gen.chunks[2], 100, 0.5f, 0.5f);
+    // // stitchTerrain(&gen.chunks[3],&gen.chunks[1], 100, 0.5f, 1.0f);
+    // stitchTerrain(&gen.chunks[2],&gen.chunks[4], 100, 0.5f, 0.5f);
     createMesh(&chunkObjects[0].mesh, gen.chunks[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
     createMesh(&chunkObjects[1].mesh, gen.chunks[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
     createMesh(&chunkObjects[2].mesh, gen.chunks[2].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);

@@ -19,15 +19,9 @@ enum ChunkType{
 };
 
 typedef struct TerrainChunk{
-    int sizex = CHUNK_SIZE;
-    int sizez = CHUNK_SIZE;
-
-    
-    Vec3f chunkOrigin;
     Vec3f *vertices;
-    // float *yValues;
+    Vec3f chunkOrigin;
 }*TerrainChunkPtr;
-
 
 struct TerrainGenerator{
     float *noiseMap;
@@ -35,9 +29,12 @@ struct TerrainGenerator{
     int noiseMaph;
 
     FreeListAllocator allocator;
-    TerrainChunkPtr chunkGrid[256][256]={NULL};
+    TerrainChunk *chunkGrid;
 
-    TerrainGenerator();
+    int sizex;
+    int sizez;
+
+    TerrainGenerator(int n = CHUNK_SIZE);
     ~TerrainGenerator();
 };
 

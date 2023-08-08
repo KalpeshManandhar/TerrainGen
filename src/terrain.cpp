@@ -1,17 +1,29 @@
 #include "terrain.h"
 #include "Allocator/allocator.h"
 
-#define INDEX_ARRAY(arr,x,z,sizez) (arr[x + z * sizez])
+#define ALLOCATOR_INITIAL 51200 // 200mb 
+#define PAGE_SIZE 4096
+#define MEMCHUNK_SIZE 
+#define CHUNK_GRID_DIM 256
 
 
-void addChunk(TerrainGenerator *gen, Vec3f chunkPos, ChunkType type){
+TerrainGenerator::TerrainGenerator(int dim){
+    initFreeList(&allocator, ALLOCATOR_INITIAL * PAGE_SIZE, CHUNK_SIZE*CHUNK_SIZE*sizeof(Vec3f));
+    chunkGrid = (TerrainChunk *)malloc(CHUNK_GRID_DIM*CHUNK_GRID_DIM * sizeof(*chunkGrid));
+    sizex = sizez = dim;
+}
+
+
+
+
+void addChunk(TerrainGenerator *gen, Vec3f chunkPos, ChunkType type, Vec2i gridPos){
     TerrainChunk chunk;
-    chunk.vertices = (Vec3f *)malloc(sizeof(*chunk.vertices) * chunk.sizex *chunk.sizez);
+    chunk.vertices = (Vec3f *)freeListAlloc(&gen->allocator);
 
-    for (int i=0; i< chunk.sizex * chunk.sizez; i++){
+    for (int i=0; i< gen->sizex * gen->sizez; i++){
         Vec3f vertex;
-        vertex.x = i%chunk.sizex;
-        vertex.z = i/chunk.sizex;
+        vertex.x = i%gen->sizex;
+        vertex.z = i/gen->sizex;
 
         // sample y from noise map
         int samplex = (int)(vertex.x *2 + chunkPos.x)%gen->noiseMapw;
@@ -39,7 +51,7 @@ void addChunk(TerrainGenerator *gen, Vec3f chunkPos, ChunkType type){
     }
 
     chunk.chunkOrigin = chunkPos;
-    gen->chunks.push_back(chunk);
+    gen->chunkGrid[gridPos.x + gridPos.y * gen->sizez] = chunk;
 }
 
 uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ){
@@ -112,7 +124,7 @@ uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ){
     newY = lerp(inner, border, t) + oldy*p*(1.0f-t);
 
 */
-void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA){
+void stitchTerrain(TerrainGenerator *gen, TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA){
     int boundaryIndexA, boundaryIndexB;
     bool xBoundary = false;
 
@@ -120,10 +132,10 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
     if ((int)a->chunkOrigin.x == (int)b->chunkOrigin.x){
         if (a->chunkOrigin.z > b->chunkOrigin.z){
             boundaryIndexA = 0;
-            boundaryIndexB = b->sizez-1;
+            boundaryIndexB = gen->sizez-1;
         }
         else{
-            boundaryIndexA = a->sizez-1;
+            boundaryIndexA = gen->sizez-1;
             boundaryIndexB = 0;
         }
         xBoundary = false;
@@ -131,10 +143,10 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
     else if ((int)a->chunkOrigin.z == (int)b->chunkOrigin.z){
         if (a->chunkOrigin.x > b->chunkOrigin.x){
             boundaryIndexA = 0;
-            boundaryIndexB = b->sizex-1;
+            boundaryIndexB = gen->sizex-1;
         }
         else{
-            boundaryIndexA = a->sizex-1;
+            boundaryIndexA = gen->sizex-1;
             boundaryIndexB = 0;
         }
         xBoundary = true;
@@ -153,23 +165,23 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
         int x2 = (boundaryIndexB == 0)?d2:boundaryIndexB-d2;
 
         // compute the new values at the border
-        for (int changeZ =0; changeZ<a->sizez; ++changeZ){
-            float borderYA = a->vertices[boundaryIndexA + changeZ * a->sizez].y;
-            float borderYB = b->vertices[boundaryIndexB + changeZ * b->sizez].y;
+        for (int changeZ =0; changeZ<gen->sizez; ++changeZ){
+            float borderYA = a->vertices[boundaryIndexA + changeZ * gen->sizez].y;
+            float borderYB = b->vertices[boundaryIndexB + changeZ * gen->sizez].y;
 
             float newBorderY = lerp(borderYA, borderYB, influenceFactorB);
             
-            a->vertices[boundaryIndexA + changeZ * a->sizez].y = newBorderY;
-            b->vertices[boundaryIndexB + changeZ * b->sizez].y = newBorderY;
+            a->vertices[boundaryIndexA + changeZ * gen->sizez].y = newBorderY;
+            b->vertices[boundaryIndexB + changeZ * gen->sizez].y = newBorderY;
         }
 
         // calculate the new y values for chunk A
         if (d1 > 0){
-            for (int changeZ =0; changeZ<a->sizez; ++changeZ){
+            for (int changeZ =0; changeZ<gen->sizez; ++changeZ){
                 // stitching shape is triangle
                 // t1 is t value for line from center to corner
-                int zDistFromMid = abs(changeZ - a->sizez/2);
-                float t1 = (float)zDistFromMid*2.0f/a->sizez;
+                int zDistFromMid = abs(changeZ - gen->sizez/2);
+                float t1 = (float)zDistFromMid*2.0f/gen->sizez;
 
                 // start and end for the changes
                 int startX1 = (boundaryIndexA == 0)?1:x1 + t1 * d1+1;
@@ -181,25 +193,25 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
 
                 // a = inner point value
                 // b = boundary point value
-                float a1 = a->vertices[depthPoint + changeZ * a->sizez].y;
-                float b1 = a->vertices[boundaryIndexA + changeZ * a->sizez].y;
+                float a1 = a->vertices[depthPoint + changeZ * gen->sizez].y;
+                float b1 = a->vertices[boundaryIndexA + changeZ * gen->sizez].y;
 
                 for (int changeX=startX1; changeX< endX1; ++changeX){
                     float t = fabs((float)(changeX - depthPoint)/xStride);
-                    float oldy = a->vertices[changeX + changeZ * a->sizez].y;
+                    float oldy = a->vertices[changeX + changeZ * gen->sizez].y;
                     float newY = lerp(a1, b1, t);
                     newY += oldy*p*0.01f*(1.0f-t);
-                    a->vertices[changeX + changeZ * a->sizez].y = newY;
+                    a->vertices[changeX + changeZ * gen->sizez].y = newY;
                 }
             }
         }
         // calculate the new y values for chunk B
         if (d2 >0){
-            for (int changeZ =0; changeZ<b->sizez; ++changeZ){
+            for (int changeZ =0; changeZ<gen->sizez; ++changeZ){
                 // stitching shape is triangle
                 // t1 is t value for line from center to corner
-                int zDistFromMid = abs(changeZ - b->sizez/2);
-                float t2 = (float)zDistFromMid*2.0f/b->sizez;
+                int zDistFromMid = abs(changeZ - gen->sizez/2);
+                float t2 = (float)zDistFromMid*2.0f/gen->sizez;
 
                 // start and end for the changes
                 int startX2 = (boundaryIndexB == 0)?1:x2 + t2 * d2;
@@ -211,15 +223,15 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
                 
                 // a = inner point value
                 // b = boundary point value
-                float a2 = b->vertices[depthPoint + changeZ * b->sizez].y;
-                float b2 = b->vertices[boundaryIndexB + changeZ * b->sizez].y;
+                float a2 = b->vertices[depthPoint + changeZ * gen->sizez].y;
+                float b2 = b->vertices[boundaryIndexB + changeZ * gen->sizez].y;
 
                 for (int changeX=startX2; changeX< endX2; ++changeX){
                     float t = fabs((float)(changeX - depthPoint)/xStride);
-                    float oldy = b->vertices[changeX + changeZ * b->sizez].y;
+                    float oldy = b->vertices[changeX + changeZ * gen->sizez].y;
                     float newY = lerp(a2, b2, t);
                     newY += oldy*p*0.01f*(1.0f-t);
-                    b->vertices[changeX + changeZ * b->sizez].y = newY;
+                    b->vertices[changeX + changeZ * gen->sizez].y = newY;
                 }
             }
         }
@@ -231,23 +243,23 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
         int z2 = (boundaryIndexB == 0)?d2:boundaryIndexB-d2;
 
         // compute the new values at the border
-        for (int changeX =0; changeX<a->sizez; ++changeX){
-            float borderYA = a->vertices[changeX + boundaryIndexA * a->sizez].y;
-            float borderYB = b->vertices[changeX + boundaryIndexB * b->sizez].y;
+        for (int changeX =0; changeX<gen->sizez; ++changeX){
+            float borderYA = a->vertices[changeX + boundaryIndexA * gen->sizez].y;
+            float borderYB = b->vertices[changeX + boundaryIndexB * gen->sizez].y;
 
             float newBorderY = lerp(borderYA, borderYB, influenceFactorB);
             
-            a->vertices[changeX + boundaryIndexA * a->sizez].y = newBorderY;
-            b->vertices[changeX + boundaryIndexB * b->sizez].y = newBorderY;
+            a->vertices[changeX + boundaryIndexA * gen->sizez].y = newBorderY;
+            b->vertices[changeX + boundaryIndexB * gen->sizez].y = newBorderY;
         }
 
         // calculate the new y values for chunk A
         if (d1 > 0){
-            for (int changeX =0; changeX<a->sizez; ++changeX){
+            for (int changeX =0; changeX<gen->sizez; ++changeX){
                 // stitching shape is triangle
                 // t1 is t value for line from center to corner
-                int xDistFromMid = abs(changeX - a->sizex/2);
-                float t1 = (float)xDistFromMid*2.0f/a->sizex;
+                int xDistFromMid = abs(changeX - gen->sizex/2);
+                float t1 = (float)xDistFromMid*2.0f/gen->sizex;
 
                 // start and end for the changes
                 int startZ1 = (boundaryIndexA == 0)?1:z1 + t1 * d1;
@@ -259,26 +271,26 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
                 
                 // a is value at inner depth
                 // b is value at border
-                float a1 = a->vertices[changeX + depthPoint * a->sizez].y;
-                float b1 = a->vertices[changeX + boundaryIndexA  * a->sizez].y;
+                float a1 = a->vertices[changeX + depthPoint * gen->sizez].y;
+                float b1 = a->vertices[changeX + boundaryIndexA  * gen->sizez].y;
 
 
                 for (int changeZ=startZ1; changeZ< endZ1; ++changeZ){
                     float t = fabs((float)(changeZ - depthPoint)/zStride);
-                    float oldy = a->vertices[changeX + changeZ * a->sizez].y;
+                    float oldy = a->vertices[changeX + changeZ * gen->sizez].y;
                     float newY = lerp(a1, b1, t);
                     newY += oldy*p*0.01f*(1.0f-t);
-                    a->vertices[changeX + changeZ * a->sizez].y = newY;
+                    a->vertices[changeX + changeZ * gen->sizez].y = newY;
                 }
             }
         }
         // calculate the new y values for chunk B
         if (d2 > 0){
-            for (int changeX =0; changeX<b->sizex; ++changeX){
+            for (int changeX =0; changeX<gen->sizex; ++changeX){
                 // stitching shape is triangle
                 // t is t value for line from center to corner
-                int xDistFromMid = abs(changeX - b->sizex/2);
-                float t2 = (float)xDistFromMid*2.0f/b->sizex;
+                int xDistFromMid = abs(changeX - gen->sizex/2);
+                float t2 = (float)xDistFromMid*2.0f/gen->sizex;
 
                 // start and end for the changes
                 int startZ2 = (boundaryIndexB == 0)?1:z2 + t2 * d2;
@@ -290,15 +302,15 @@ void stitchTerrain(TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float 
                 
                 // a is value at inner depth
                 // b is value at border
-                float a2 = b->vertices[changeX + depthPoint * b->sizez].y;
-                float b2 = b->vertices[changeX + boundaryIndexB * b->sizez].y;
+                float a2 = b->vertices[changeX + depthPoint * gen->sizez].y;
+                float b2 = b->vertices[changeX + boundaryIndexB * gen->sizez].y;
 
                 for (int changeZ=startZ2; changeZ< endZ2; ++changeZ){
                     float t = fabs((float)(changeZ - depthPoint)/zStride);
-                    float oldy = b->vertices[changeX + changeZ * b->sizez].y;
+                    float oldy = b->vertices[changeX + changeZ * gen->sizez].y;
                     float newY = lerp(a2, b2, t);
                     newY += oldy*p*0.01f*(1.0f-t);
-                    b->vertices[changeX + changeZ * b->sizez].y = newY;
+                    b->vertices[changeX + changeZ * gen->sizez].y = newY;
                 }
             }
         }
