@@ -3,6 +3,8 @@
 
 #include <thread>
 
+#include "debug.h"
+
 
 #define ALLOCATOR_INITIAL 51200 // 200mb 
 #define PAGE_SIZE 4096
@@ -35,25 +37,60 @@ TerrainChunk addChunk(TerrainGenerator *gen, Vec3f chunkPos, float amplMultiplie
     TerrainChunk chunk;
     chunk.vertices = (Vec3f *)freeListAlloc(&gen->allocator);
 
-    for (int i=0; i< gen->sizex * gen->sizez; i++){
-        Vec3f vertex;
-        vertex.x = i%gen->sizex;
-        vertex.z = i/gen->sizex;
+    // n_time sttime = get_current_time();
 
-        // sample y from noise map
-        int samplex = (int)(vertex.x *2 + chunkPos.x)%gen->noiseMapw;
-        int samplez = ((int)(vertex.z *2 + chunkPos.z)%gen->noiseMaph);
-        vertex.y = 1.0f - gen->noiseMap[(samplex + samplez * gen->noiseMapw)];
-        vertex.y = vertex.y * 2.0f - 1.0f;
+    auto sampleY = [&](int startIndex, int endIndex){
+        for (int i=startIndex; i< endIndex; i++){
+            Vec3f vertex;
+            vertex.x = i%gen->sizex;
+            vertex.z = i/gen->sizex;
 
-        vertex.x *= gen->scaleX;
-        vertex.z *= gen->scaleZ;
+            // sample y from noise map
+            int samplex = (int)(vertex.x *2 + chunkPos.x)%gen->noiseMapw;
+            int samplez = ((int)(vertex.z *2 + chunkPos.z)%gen->noiseMaph);
+            vertex.y = 1.0f - gen->noiseMap[(samplex + samplez * gen->noiseMapw)];
+            vertex.y = vertex.y * 2.0f - 1.0f;
 
-        vertex.y *= amplMultiplier;
-        vertex.y += chunkPos.y;
+            vertex.x *= gen->scaleX;
+            vertex.z *= gen->scaleZ;
 
-        chunk.vertices[i] = vertex;
-    }
+            vertex.y *= amplMultiplier;
+            vertex.y += chunkPos.y;
+
+            chunk.vertices[i] = vertex;
+        }
+    };
+
+    int total = gen->sizex * gen->sizez;
+    sampleY(0, total);
+    // std::thread t1(sampleY, 0, total/2);
+    // std::thread t2(sampleY, total/2, total);
+    // t1.join();
+    // t2.join();
+    
+    // n_time endtime = get_current_time();
+    // fprintf(stdout, "Time taken %lf", t_diff(sttime, endtime));
+
+    // for (int i=0; i< gen->sizex * gen->sizez; i++){
+    //     Vec3f vertex;
+    //     vertex.x = i%gen->sizex;
+    //     vertex.z = i/gen->sizex;
+
+    //     // sample y from noise map
+    //     int samplex = (int)(vertex.x *2 + chunkPos.x)%gen->noiseMapw;
+    //     int samplez = ((int)(vertex.z *2 + chunkPos.z)%gen->noiseMaph);
+    //     vertex.y = 1.0f - gen->noiseMap[(samplex + samplez * gen->noiseMapw)];
+    //     vertex.y = vertex.y * 2.0f - 1.0f;
+
+    //     vertex.x *= gen->scaleX;
+    //     vertex.z *= gen->scaleZ;
+
+    //     vertex.y *= amplMultiplier;
+    //     vertex.y += chunkPos.y;
+
+    //     chunk.vertices[i] = vertex;
+    // }
+
 
     chunk.chunkOrigin = chunkPos;
     return chunk;
@@ -340,7 +377,6 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
             if (gridPos.x < 0 || gridPos.y < 0)
                 continue;
 
-
             // if chunk is already generated
             if (gen->isChunkGenerated[gridPos.x][gridPos.y])
                 continue;
@@ -349,6 +385,11 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
             float yAmplitude = 15.0f;
             float yHeight = 10.0f;
             Vec3f chunkPos = {
+                gridPos.x * gen->sizex,
+                yHeight,
+                gridPos.y * gen->sizez, 
+            };
+            Vec3f chunkPosWScale = {
                 gridPos.x * gen->sizex * gen->scaleX,
                 yHeight,
                 gridPos.y * gen->sizez * gen->scaleZ, 
@@ -356,21 +397,45 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
             
             // if chunk lies outside a threshold of the view of camera
             // camera front is TOWARDS the camera not the direction camera is looking in
-            Vec3f cameraToChunk = normalize(cameraPos - chunkPos);
+            Vec3f cameraToChunk = normalize(cameraPos - chunkPosWScale);
             const float similarityThreshold = 0.5;
             // if (dotProduct(cameraToChunk, cameraFront) < similarityThreshold)
             //     return;
             
 
             gen->chunkGrid[gridPos.x + gridPos.y * gen->sizez] = addChunk(gen, chunkPos, yAmplitude);
-            TerrainChunk newChunk = gen->chunkGrid[gridPos.x + gridPos.y * gen->sizez];
+            TerrainChunk *newChunk = &gen->chunkGrid[gridPos.x + gridPos.y * gen->sizez];            
+            
+            // stitching chunks
+            // right
+            if ((gridPos.x + 1)>=0 && gen->isChunkGenerated[gridPos.x+1][gridPos.y]){
+                TerrainChunk *right = &gen->chunkGrid[(gridPos.x + 1)  + gridPos.y * gen->sizez];
+                stitchTerrain(gen, right, newChunk, gen->sizex/2, 0.01f, 1.0f);
+            }
+            // left
+            if ((gridPos.x - 1)>=0 && gen->isChunkGenerated[gridPos.x-1][gridPos.y]){
+                TerrainChunk *left = &gen->chunkGrid[(gridPos.x - 1)  + gridPos.y * gen->sizez];
+                stitchTerrain(gen, left, newChunk, gen->sizex/2, 0.01f, 1.0f);
+            }
+            // // front
+            // if ((gridPos.y + 1)>=0 && gen->isChunkGenerated[gridPos.x][gridPos.y+1]){
+            //     TerrainChunk *front = &gen->chunkGrid[gridPos.x  + (gridPos.y+1) * gen->sizez];
+            //     stitchTerrain(gen, front, newChunk, gen->sizex/2, 0.01f, 1.0f);
+            // }
+            // // back
+            // if ((gridPos.y - 1)>=0 && gen->isChunkGenerated[gridPos.x][gridPos.y-1]){
+            //     TerrainChunk *back = &gen->chunkGrid[gridPos.x  + (gridPos.y-1) * gen->sizez];
+            //     stitchTerrain(gen, back, newChunk, gen->sizex/2, 0.01f, 1.0f);
+            // }
+            
 
-            Object3D newChunkObj;
-            createMesh(&newChunkObj.mesh, newChunk.vertices, gen->sizex * gen->sizez, gen->indices, (gen->sizex-1)*(gen->sizez-1)*6);
-            newChunkObj.origin = chunkPos;
+            // generate mesh for new chunk
+            Object3D newChunkObj; 
+            createMesh(&newChunkObj.mesh, newChunk->vertices, gen->sizex * gen->sizez, gen->indices, (gen->sizex-1)*(gen->sizez-1)*6);
+            newChunkObj.origin = chunkPosWScale;
+
 
             gen->chunkObjects.push_back(newChunkObj);
-
             gen->isChunkGenerated[gridPos.x][gridPos.y] = true;
             return;
         }

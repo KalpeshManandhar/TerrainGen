@@ -1,6 +1,9 @@
 #include "mesh.h"
 #include <glad/glad.h>
 
+#include "../debug.h"
+#include <stdio.h>
+
 static int setupMesh(Mesh *m){
     glGenVertexArrays(1, &m->vao);
     glBindVertexArray(m->vao);
@@ -40,9 +43,15 @@ static int setupMesh(Mesh *m){
 int createMesh(Mesh *m, Vec3f *vertices, int nvertices, uint32_t *indices, int nindices){
     size_t verticesSize = sizeof(*vertices) * nvertices;
     size_t indicesSize = sizeof(*indices) * nindices;
+
+    TIME(startCopy);
+
+#ifdef y_ARRAY  // custom array
+    m->vertices.useExisting(vertices, nvertices);
+    m->indices.useExisting(indices, nindices);
+#else
     m->vertices.reserve(verticesSize);
     m->indices.reserve(verticesSize);
-    size_t a = (size_t)m->vertices.data();
     // memcpy(m->vertices.data(), vertices, verticesSize);
     // memcpy(m->indices.data(), indices, indicesSize);
     for (int i=0; i< nvertices; i++)
@@ -50,7 +59,15 @@ int createMesh(Mesh *m, Vec3f *vertices, int nvertices, uint32_t *indices, int n
     for (int i=0; i< nindices; i++)
         m->indices.push_back(indices[i]);
 
+#endif
+
+    TIME(endCopy);
+    fprintf(stdout, "Time taken copy %lf\n", TIME_DIFF(startCopy, endCopy));
+
+    TIME(startGl);
     setupMesh(m);    
+    TIME(endGL);
+    fprintf(stdout, "Time taken create GL %lf\n", TIME_DIFF(startGl, endGL));
     return 0;
 }
 

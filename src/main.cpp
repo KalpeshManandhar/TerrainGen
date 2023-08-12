@@ -51,15 +51,16 @@ void mouseMoveCallback(GLFWwindow* window, double xPosIn, double yPosIn){
 int main(){
 
     TerrainGenerator gen;
-    gen.noiseMaph = 4*CHUNK_SIZE;
-    gen.noiseMapw = 4*CHUNK_SIZE;
+    gen.noiseMaph = 8*CHUNK_SIZE;
+    gen.noiseMapw = 8*CHUNK_SIZE;
     gen.noiseMap = (float*) malloc(gen.noiseMaph * gen.noiseMapw * sizeof(*gen.noiseMap));
 
     uint32_t *ptable = getPermutationTable(PTABLE_SIZE);
-    uint32_t *buffer = (uint32_t*) malloc(gen.noiseMaph * gen.noiseMapw * sizeof(*buffer));
 
     // smaller the multiplier the range is smaller, ie more zoom
     float multiplier = 0.005f;
+
+    
     for (int i = 0; i< gen.noiseMaph * gen.noiseMapw;i++){
         Vec2f pos;
         pos.x = (i%gen.noiseMapw) * multiplier;
@@ -84,39 +85,6 @@ int main(){
     
     camera.init({0,0,1},{0,1,0},{1,0,0}, 0.1f,100.0f, r.width, r.height);
     camera.pos = {0,0,3};
-
-    // addChunk(&gen, Vec3f{256,50,512}, CHUNK_HILL);
-    // addChunk(&gen, Vec3f{512,30,256}, CHUNK_HILL);
-
-    // chunkObjects.push_back(m);
-    // chunkObjects.push_back(m);
-    // chunkObjects.push_back(m);
-    // chunkObjects.push_back(m);
-    // chunkObjects.push_back(m);
-    // chunkObjects.push_back(m);
-    // chunkObjects.push_back(m);
-    // createMesh(&chunkObjects[0].mesh, gen.chunks[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // createMesh(&chunkObjects[1].mesh, gen.chunks[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // chunkObjects[0].origin = gen.chunks[0].chunkOrigin;
-    // chunkObjects[1].origin = gen.chunks[1].chunkOrigin;
-    // stitchTerrain(&gen.chunks[0],&gen.chunks[1], 100, 0.5f, 0.5f);
-    // stitchTerrain(&gen.chunks[2],&gen.chunks[1], 100, 0.5f, 0.5f);
-    // stitchTerrain(&gen.chunks[3],&gen.chunks[2], 100, 0.5f, 0.5f);
-    // // stitchTerrain(&gen.chunks[3],&gen.chunks[1], 100, 0.5f, 1.0f);
-    // stitchTerrain(&gen.chunks[2],&gen.chunks[4], 100, 0.5f, 0.5f);
-    // createMesh(&chunkObjects[0].mesh, gen.chunkGrid[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // createMesh(&chunkObjects[1].mesh, gen.chunkGrid[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // createMesh(&chunkObjects[2].mesh, gen.chunkGrid[2].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // // createMesh(&chunkObjects[3].mesh, gen.chunkGrid[3].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // // createMesh(&chunkObjects[4].mesh, gen.chunkGrid[4].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // chunkObjects[0].origin = gen.chunkGrid[0].chunkOrigin;
-    // chunkObjects[1].origin = gen.chunkGrid[1].chunkOrigin;
-    // chunkObjects[2].origin = gen.chunkGrid[2].chunkOrigin;
-    // chunkObjects[3].origin = gen.chunkGrid[3].chunkOrigin;
-    // chunkObjects[4].origin = gen.chunkGrid[4].chunkOrigin;
-    
-    // gen.chunkGrid[chunkNox][chunkNoz] = true;
-
     
     while (!glfwWindowShouldClose(r.window)){
         glfwPollEvents();
@@ -139,47 +107,16 @@ int main(){
 
         int cameraChunkPosX = camera.pos.x/(CHUNK_SIZE*0.1f);
         int cameraChunkPosZ = camera.pos.z/(CHUNK_SIZE*0.1f);
-        proceduralGenerate(&gen, camera.pos, camera.front);
-        // printf("Currently above: %d, %d \n", cameraChunkPosX, cameraChunkPosZ);
         
-        // check if a 3x3 
-        // for (int i = -1; i<=1; i++){
-        //     int chunkNox = cameraChunkPosX+i;
-        //     if (chunkNox < 0 || chunkNox > 255) continue;
-
-        //     for (int j = -1; j<=1; j++){
-        //         int chunkNoz = cameraChunkPosZ+j;
-
-        //         if (chunkNoz < 0 || chunkNoz > 255) continue;
-        //         // if chunk isnt generated 
-        //         if (!gen.chunkGrid[chunkNox][chunkNoz]){
-        //             // generate chunk data
-        //             addChunk(&gen, Vec3f{(float)chunkNox * CHUNK_SIZE, 0, (float)chunkNoz *CHUNK_SIZE}, CHUNK_HILL);
-
-        //             // add new object
-        //             Object3D m;
-        //             chunkObjects.push_back(m);
-                    
-        //             int totalChunks = chunkObjects.size();
-        //             createMesh(&chunkObjects[totalChunks-1].mesh, gen.chunks[totalChunks-1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-        //             chunkObjects[totalChunks - 1].origin = gen.chunks[totalChunks - 1].chunkOrigin;
-        //             gen.chunkGrid[chunkNox][chunkNoz] = true;
-        //         }
-        //     }
-        // }
-
-        // add new object
+        proceduralGenerate(&gen, camera.pos, camera.front);
         
 
 
         for (int i =0; i<gen.chunkObjects.size(); i++){
-        // for (int i =0; i<1; i++){
             Vec3f worldCoords = gen.chunkObjects[i].origin;
             
-
             if (dotProduct(camera.pos, worldCoords) < 1024*1024){
                 Mat4 model = translate(worldCoords.x,0, worldCoords.z)*scaleAboutOrigin(1,1,1);
-                // Mat4 model = translate(0,0,0);
                 drawMesh(&r, &gen.chunkObjects[i].mesh, &terrainShader, model, view, proj);
             }
         }

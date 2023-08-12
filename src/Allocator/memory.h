@@ -14,11 +14,11 @@
 #define PAGE_SIZE 4096
 
 
-uint64_t alignUp(uint64_t address, uint64_t align) {
+static inline uint64_t alignUp(uint64_t address, uint64_t align) {
     return((address + (align - 1)) & ~(align -1));
 }
 
-void *osAlloc(size_t size){
+static inline void *osAlloc(size_t size){
     void * memory = NULL;
 #ifdef PLATFORM_WINDOWS
     memory = VirtualAlloc(NULL, size, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
@@ -31,7 +31,7 @@ void *osAlloc(size_t size){
     return(memory);
 }
 
-void osFree(void *address, size_t size){
+static inline void osFree(void *address, size_t size){
 #ifdef PLATFORM_WINDOWS
     VirtualFree(address, size, MEM_FREE);
 #endif
