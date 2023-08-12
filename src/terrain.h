@@ -4,6 +4,7 @@
 #define Array std::vector
 #include "./math/vec.h"
 #include "./Allocator/freeListAllocator.h"
+#include "./Graphics/renderer.h"
 
 #define CHUNK_SIZE 256
 #define VISIBLE_CHUNK_RADIUS 1
@@ -28,20 +29,28 @@ struct TerrainGenerator{
     int noiseMapw;
     int noiseMaph;
 
-    FreeListAllocator allocator;
-    TerrainChunk *chunkGrid;
-
     int sizex;
     int sizez;
+    float scaleX;
+    float scaleZ;
+
+    
+    FreeListAllocator allocator;
+    TerrainChunk *chunkGrid;
+    bool isChunkGenerated[256][256] = {false};
+
+    Array<Object3D> chunkObjects;
+    uint32_t *indices;
 
     TerrainGenerator(int n = CHUNK_SIZE);
-    // ~TerrainGenerator();
+    ~TerrainGenerator();
+    
 };
 
 
 
-void addChunk(TerrainGenerator *gen, float chunkY, ChunkType type, Vec2i gridPos);
+TerrainChunk addChunk(TerrainGenerator *gen, Vec3f chunkY, float amplMultiplier);
 uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ);
 void stitchTerrain(TerrainGenerator *gen, TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA);
-void proceduralGenerate(TerrainGenerator *gen, Vec2f cameraPos, Vec3f cameraFront);
+void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFront);
 

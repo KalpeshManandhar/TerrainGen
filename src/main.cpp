@@ -75,9 +75,6 @@ int main(){
     glfwSetInputMode(r.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     
-    Array<Object3D> chunkObjects;
-    // addChunk(&gen, {n,0,n}, CHUNK_HILL);
-    uint32_t *chunkIndices = getIndices(CHUNK_SIZE, CHUNK_SIZE);
     
     
     
@@ -88,16 +85,12 @@ int main(){
     camera.init({0,0,1},{0,1,0},{1,0,0}, 0.1f,100.0f, r.width, r.height);
     camera.pos = {0,0,3};
 
-    Object3D m;
-    addChunk(&gen, 20, CHUNK_HILL, {0,0});
-    addChunk(&gen, 20, CHUNK_HILL, {1,0});
-    addChunk(&gen, 40, CHUNK_HILL, {2,0});
     // addChunk(&gen, Vec3f{256,50,512}, CHUNK_HILL);
     // addChunk(&gen, Vec3f{512,30,256}, CHUNK_HILL);
 
-    chunkObjects.push_back(m);
-    chunkObjects.push_back(m);
-    chunkObjects.push_back(m);
+    // chunkObjects.push_back(m);
+    // chunkObjects.push_back(m);
+    // chunkObjects.push_back(m);
     // chunkObjects.push_back(m);
     // chunkObjects.push_back(m);
     // chunkObjects.push_back(m);
@@ -111,14 +104,14 @@ int main(){
     // stitchTerrain(&gen.chunks[3],&gen.chunks[2], 100, 0.5f, 0.5f);
     // // stitchTerrain(&gen.chunks[3],&gen.chunks[1], 100, 0.5f, 1.0f);
     // stitchTerrain(&gen.chunks[2],&gen.chunks[4], 100, 0.5f, 0.5f);
-    createMesh(&chunkObjects[0].mesh, gen.chunkGrid[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    createMesh(&chunkObjects[1].mesh, gen.chunkGrid[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    createMesh(&chunkObjects[2].mesh, gen.chunkGrid[2].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // createMesh(&chunkObjects[3].mesh, gen.chunkGrid[3].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    // createMesh(&chunkObjects[4].mesh, gen.chunkGrid[4].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
-    chunkObjects[0].origin = gen.chunkGrid[0].chunkOrigin;
-    chunkObjects[1].origin = gen.chunkGrid[1].chunkOrigin;
-    chunkObjects[2].origin = gen.chunkGrid[2].chunkOrigin;
+    // createMesh(&chunkObjects[0].mesh, gen.chunkGrid[0].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    // createMesh(&chunkObjects[1].mesh, gen.chunkGrid[1].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    // createMesh(&chunkObjects[2].mesh, gen.chunkGrid[2].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    // // createMesh(&chunkObjects[3].mesh, gen.chunkGrid[3].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    // // createMesh(&chunkObjects[4].mesh, gen.chunkGrid[4].vertices, CHUNK_SIZE*CHUNK_SIZE, chunkIndices, (CHUNK_SIZE-1)*(CHUNK_SIZE-1)*6);
+    // chunkObjects[0].origin = gen.chunkGrid[0].chunkOrigin;
+    // chunkObjects[1].origin = gen.chunkGrid[1].chunkOrigin;
+    // chunkObjects[2].origin = gen.chunkGrid[2].chunkOrigin;
     // chunkObjects[3].origin = gen.chunkGrid[3].chunkOrigin;
     // chunkObjects[4].origin = gen.chunkGrid[4].chunkOrigin;
     
@@ -135,7 +128,6 @@ int main(){
 
         uint32_t cameraMov = cameraUpdate(r.window);
         
-
         camera.updatePos(cameraMov, 100.0f);
 
         Mat4 view = camera.lookat(camera.pos - camera.front, Vec3f{0,1,0});
@@ -147,6 +139,7 @@ int main(){
 
         int cameraChunkPosX = camera.pos.x/(CHUNK_SIZE*0.1f);
         int cameraChunkPosZ = camera.pos.z/(CHUNK_SIZE*0.1f);
+        proceduralGenerate(&gen, camera.pos, camera.front);
         // printf("Currently above: %d, %d \n", cameraChunkPosX, cameraChunkPosZ);
         
         // check if a 3x3 
@@ -179,15 +172,15 @@ int main(){
         
 
 
-        for (int i =0; i<chunkObjects.size(); i++){
+        for (int i =0; i<gen.chunkObjects.size(); i++){
         // for (int i =0; i<1; i++){
-            Vec3f worldCoords = chunkObjects[i].origin;
+            Vec3f worldCoords = gen.chunkObjects[i].origin;
             
 
             if (dotProduct(camera.pos, worldCoords) < 1024*1024){
-                Mat4 model = translate(worldCoords.x*0.1f,0, worldCoords.z*0.1f)*scaleAboutOrigin(0.1,1,0.1);
+                Mat4 model = translate(worldCoords.x,0, worldCoords.z)*scaleAboutOrigin(1,1,1);
                 // Mat4 model = translate(0,0,0);
-                drawMesh(&r, &chunkObjects[i].mesh, &terrainShader, model, view, proj);
+                drawMesh(&r, &gen.chunkObjects[i].mesh, &terrainShader, model, view, proj);
             }
         }
         glfwSwapBuffers(r.window);
