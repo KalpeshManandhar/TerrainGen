@@ -14,10 +14,11 @@
 
 enum ChunkType{
     CHUNK_MOUNTAIN,
-    CHUNK_WATER,
     CHUNK_HILL,
     CHUNK_VALLEY,
-    CHUNK_PLAIN
+    CHUNK_PLAIN,
+
+    CHUNK_TYPE_COUNT
 };
 
 typedef struct TerrainChunk{
@@ -43,7 +44,7 @@ struct TerrainGenerator{
     Array<Object3D> chunkObjects;
     uint32_t *indices;
 
-    TerrainGenerator(int n = CHUNK_SIZE);
+    TerrainGenerator(int dim, float scaleX, float scaleZ);
     ~TerrainGenerator();
     
 };

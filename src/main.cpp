@@ -7,11 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 
-#define BMP_USE_VALUES
-#include "bmp.h"
-
 #include <stdio.h>
 #include <stdint.h>
+#include <thread>
 
 #define PTABLE_SIZE (4096 * 2)
 
@@ -47,26 +45,45 @@ void mouseMoveCallback(GLFWwindow* window, double xPosIn, double yPosIn){
 }
 
 
-
-int main(){
-
-    TerrainGenerator gen;
-    gen.noiseMaph = 8*CHUNK_SIZE;
-    gen.noiseMapw = 8*CHUNK_SIZE;
-    gen.noiseMap = (float*) malloc(gen.noiseMaph * gen.noiseMapw * sizeof(*gen.noiseMap));
+void generateNoiseMap(TerrainGenerator *gen){
+    gen->noiseMap = (float*) malloc(gen->noiseMaph * gen->noiseMapw * sizeof(*gen->noiseMap));
 
     uint32_t *ptable = getPermutationTable(PTABLE_SIZE);
 
     // smaller the multiplier the range is smaller, ie more zoom
     float multiplier = 0.005f;
 
+    auto generateNoise = [&](int startIndex, int endIndex){
+        for (int i = startIndex; i< endIndex;i++){
+            Vec2f pos;
+            pos.x = (i%gen->noiseMapw) * multiplier;
+            pos.y = (i/gen->noiseMapw) * multiplier;
+            gen->noiseMap[i] = fractionalBrownianMotion2D(pos, ptable, PTABLE_SIZE,4);
+        }
+    };
+
+    int total = gen->noiseMaph * gen->noiseMapw;
     
-    for (int i = 0; i< gen.noiseMaph * gen.noiseMapw;i++){
-        Vec2f pos;
-        pos.x = (i%gen.noiseMapw) * multiplier;
-        pos.y = (i/gen.noiseMapw) * multiplier;
-        gen.noiseMap[i] = fractionalBrownianMotion2D(pos, ptable, PTABLE_SIZE,4);
+    std::thread t1[8];
+    for (int threadNo=0; threadNo<8; threadNo++){
+        int start = threadNo * total/8;
+        int end = start + total/8;
+        t1[threadNo] = std::thread(generateNoise, start, end); 
     }
+    for (int threadNo=0; threadNo<8; threadNo++){
+        t1[threadNo].join(); 
+    }
+
+}
+
+
+int main(){
+    TerrainGenerator gen(CHUNK_SIZE, 0.3f,0.3f);
+    gen.noiseMaph = 8*CHUNK_SIZE;
+    gen.noiseMapw = 8*CHUNK_SIZE;
+    
+
+    generateNoiseMap(&gen);
 
     Renderer r;
     initRenderer(&r,WINDOW_TITLE, WINDOW_W, WINDOW_H);
@@ -100,25 +117,22 @@ int main(){
 
         Mat4 view = camera.lookat(camera.pos - camera.front, Vec3f{0,1,0});
 
-        glm::mat4x4 projs = glm::perspective(glm::radians(45.0f), (float)r.width/r.height, 0.1f,150.0f);
+        glm::mat4x4 projs = glm::perspective(glm::radians(45.0f), (float)r.width/r.height, 0.1f,300.0f);
         Mat4 p = *((Mat4*)&projs);
         Mat4 proj = transpose(p);
 
-
-        int cameraChunkPosX = camera.pos.x/(CHUNK_SIZE*0.1f);
-        int cameraChunkPosZ = camera.pos.z/(CHUNK_SIZE*0.1f);
-        
         proceduralGenerate(&gen, camera.pos, camera.front);
         
 
 
         for (int i =0; i<gen.chunkObjects.size(); i++){
             Vec3f worldCoords = gen.chunkObjects[i].origin;
+            Vec3f chunkToCamera = normalize(camera.pos - worldCoords);
             
-            if (dotProduct(camera.pos, worldCoords) < 1024*1024){
-                Mat4 model = translate(worldCoords.x,0, worldCoords.z)*scaleAboutOrigin(1,1,1);
-                drawMesh(&r, &gen.chunkObjects[i].mesh, &terrainShader, model, view, proj);
-            }
+            if (dotProduct(chunkToCamera, camera.front) < 0.0f) 
+                continue;
+            Mat4 model = translate(worldCoords.x,-10.0f, worldCoords.z);
+            drawMesh(&r, &gen.chunkObjects[i].mesh, &terrainShader, model, view, proj);
         }
         glfwSwapBuffers(r.window);
     }

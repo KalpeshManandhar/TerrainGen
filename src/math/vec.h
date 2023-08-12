@@ -5,6 +5,7 @@
 #define Clamp(a, val, b)    (Max(a, Min(val, b)))
 #define Abs(a)				((a<0)?-a:a)
 #define Radians(x)          (2.0f*3.1415f*x/360.f)
+#define Between(a,b,x)      ((x>=a)&&(x<b))
 
 template <typename T>
 struct Vec3{
