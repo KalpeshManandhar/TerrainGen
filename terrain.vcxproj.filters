@@ -19,6 +19,9 @@
     <Filter Include="Source Files\math">
       <UniqueIdentifier>{ee433101-5552-4e1a-9c87-aa9ab6cbbab6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\allocator">
+      <UniqueIdentifier>{ad22272b-e771-4422-8d6c-e365158a8453}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\terrain.cpp">
@@ -47,6 +50,9 @@
     </ClCompile>
     <ClCompile Include="src\math\vec.cpp">
       <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Allocator\freelistAllocator.cpp">
+      <Filter>Source Files\allocator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

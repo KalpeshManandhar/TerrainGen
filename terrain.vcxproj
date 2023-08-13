@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="E:\libraries\glad\src\glad.c" />
+    <ClCompile Include="src\Allocator\freelistAllocator.cpp" />
     <ClCompile Include="src\Graphics\camera.cpp" />
     <ClCompile Include="src\Graphics\mesh.cpp" />
     <ClCompile Include="src\Graphics\renderer.cpp" />
