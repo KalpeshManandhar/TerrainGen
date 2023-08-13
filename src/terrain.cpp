@@ -1,8 +1,10 @@
 #include "./terrain.h"
 #include "./Allocator/allocator.h"
-
+#include "./noise.h"
 
 #include "debug.h"
+
+#include <thread>
 
 
 #define ALLOCATOR_INITIAL 51200 // 200mb 
@@ -28,6 +30,39 @@ TerrainGenerator::TerrainGenerator(int dim, float scalex, float scalez){
 TerrainGenerator::~TerrainGenerator(){
     free(chunkGrid);
     destroy(&allocator);
+}
+
+void generateNoiseMap(TerrainGenerator *gen, int w, int h){
+    gen->noiseMapw = w;
+    gen->noiseMaph = h;
+    gen->noiseMap = (float*) malloc(gen->noiseMaph * gen->noiseMapw * sizeof(*gen->noiseMap));
+
+    uint32_t *ptable = getPermutationTable(PTABLE_SIZE);
+
+    // smaller the multiplier the range is smaller, ie more zoom
+    float multiplier = 0.005f;
+
+    auto generateNoise = [&](int startIndex, int endIndex){
+        for (int i = startIndex; i< endIndex;i++){
+            Vec2f pos;
+            pos.x = (i%gen->noiseMapw) * multiplier;
+            pos.y = (i/gen->noiseMapw) * multiplier;
+            gen->noiseMap[i] = fractionalBrownianMotion2D(pos, ptable, PTABLE_SIZE,4);
+        }
+    };
+
+    int total = gen->noiseMaph * gen->noiseMapw;
+    
+    std::thread t1[8];
+    for (int threadNo=0; threadNo<8; threadNo++){
+        int start = threadNo * total/8;
+        int end = start + total/8;
+        t1[threadNo] = std::thread(generateNoise, start, end); 
+    }
+    for (int threadNo=0; threadNo<8; threadNo++){
+        t1[threadNo].join(); 
+    }
+
 }
 
 

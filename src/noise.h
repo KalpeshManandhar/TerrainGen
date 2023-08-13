@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "math/vec.h"
 
+#define PTABLE_SIZE (4096 * 2)
+
 
 
 uint32_t *getPermutationTable(uint32_t n);

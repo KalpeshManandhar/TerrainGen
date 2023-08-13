@@ -56,6 +56,8 @@ TerrainChunk addChunk(TerrainGenerator *gen, Vec3f chunkY, float amplMultiplier)
 uint32_t *getIndices(uint32_t chunksizeX, uint32_t chunksizeZ);
 void stitchTerrain(TerrainGenerator *gen, TerrainChunk *a, TerrainChunk *b, int ndepth, float p, float influenceFactorA);
 void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFront);
+void generateNoiseMap(TerrainGenerator *gen, int w, int h);
+
 
 #undef Array
 

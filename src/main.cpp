@@ -1,5 +1,4 @@
 #include "terrain.h"
-#include "noise.h"
 #include "./Graphics/mesh.h"
 #include "./Graphics/renderer.h"
 #include "./Graphics/camera.h"
@@ -9,9 +8,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <thread>
 
-#define PTABLE_SIZE (4096 * 2)
 
 #define WINDOW_H  720
 #define WINDOW_W  1280
@@ -45,45 +42,14 @@ void mouseMoveCallback(GLFWwindow* window, double xPosIn, double yPosIn){
 }
 
 
-void generateNoiseMap(TerrainGenerator *gen){
-    gen->noiseMap = (float*) malloc(gen->noiseMaph * gen->noiseMapw * sizeof(*gen->noiseMap));
 
-    uint32_t *ptable = getPermutationTable(PTABLE_SIZE);
-
-    // smaller the multiplier the range is smaller, ie more zoom
-    float multiplier = 0.005f;
-
-    auto generateNoise = [&](int startIndex, int endIndex){
-        for (int i = startIndex; i< endIndex;i++){
-            Vec2f pos;
-            pos.x = (i%gen->noiseMapw) * multiplier;
-            pos.y = (i/gen->noiseMapw) * multiplier;
-            gen->noiseMap[i] = fractionalBrownianMotion2D(pos, ptable, PTABLE_SIZE,4);
-        }
-    };
-
-    int total = gen->noiseMaph * gen->noiseMapw;
-    
-    std::thread t1[8];
-    for (int threadNo=0; threadNo<8; threadNo++){
-        int start = threadNo * total/8;
-        int end = start + total/8;
-        t1[threadNo] = std::thread(generateNoise, start, end); 
-    }
-    for (int threadNo=0; threadNo<8; threadNo++){
-        t1[threadNo].join(); 
-    }
-
-}
 
 
 int main(){
     TerrainGenerator gen(CHUNK_SIZE, 0.3f,0.3f);
-    gen.noiseMaph = 8*CHUNK_SIZE;
-    gen.noiseMapw = 8*CHUNK_SIZE;
     
 
-    generateNoiseMap(&gen);
+    generateNoiseMap(&gen, 8*CHUNK_SIZE, 8*CHUNK_SIZE);
 
     Renderer r;
     initRenderer(&r,WINDOW_TITLE, WINDOW_W, WINDOW_H);
