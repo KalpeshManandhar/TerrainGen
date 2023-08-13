@@ -389,7 +389,7 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
                 continue;
             
 
-            float yAmplitude = 200.0f;
+            float yAmplitude = 1.05f;
             float yHeight = 10.0f;
 
 
@@ -402,10 +402,10 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
             int amplitudeNoise = noiseSample * INT32_MAX;
             switch (amplitudeNoise % CHUNK_TYPE_COUNT)
             {
-                case CHUNK_MOUNTAIN: yAmplitude = 30.0f; break;
-                case CHUNK_HILL: yAmplitude = 15.0f; break;
-                case CHUNK_PLAIN: yAmplitude = 7.0f; break;
-                case CHUNK_VALLEY: yAmplitude = -5.0f; break;
+                case CHUNK_MOUNTAIN: yAmplitude *= 30.0f; break;
+                case CHUNK_HILL: yAmplitude *= 15.0f; break;
+                case CHUNK_PLAIN: yAmplitude *= 7.0f; break;
+                case CHUNK_VALLEY: yAmplitude *= -5.0f; break;
                 default: break;
             }
 

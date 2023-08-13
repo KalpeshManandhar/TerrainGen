@@ -13,8 +13,6 @@ struct Renderer{
     GLFWwindow *window;
     uint32_t height;
     uint32_t width;
-
-    Shader *shader;
 };
 
 
@@ -26,7 +24,7 @@ struct Object3D{
 
 
 
-int initRenderer(Renderer *r, const char *title, int width, int height);
+int initRenderer(Renderer *r, const char *title, int width, int height, bool vsyncEnable);
 int clearScreen(Renderer *r, Vec4f color);
 int cleanup();
 int drawMesh(Renderer *r, Mesh *m, Shader *shader, Mat4 model, Mat4 view, Mat4 projection);

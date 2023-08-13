@@ -1,5 +1,4 @@
 #include "terrain.h"
-#include "./Graphics/mesh.h"
 #include "./Graphics/renderer.h"
 #include "./Graphics/camera.h"
 
@@ -14,9 +13,6 @@
 #define WINDOW_W  1280
 
 #define WINDOW_TITLE "terrain"
-
-
-
 
 
 uint32_t cameraUpdate(GLFWwindow *window);
@@ -38,7 +34,6 @@ void mouseMoveCallback(GLFWwindow* window, double xPosIn, double yPosIn){
     prevy = yPos;
 
     camera.updateOrientation(xOffset, yOffset);
-
 }
 
 
@@ -47,19 +42,15 @@ void mouseMoveCallback(GLFWwindow* window, double xPosIn, double yPosIn){
 
 int main(){
     TerrainGenerator gen(CHUNK_SIZE, 0.3f,0.3f);
-    
-
+    // generate noise map
     generateNoiseMap(&gen, 8*CHUNK_SIZE, 8*CHUNK_SIZE);
 
+    // initialize renderer
     Renderer r;
-    initRenderer(&r,WINDOW_TITLE, WINDOW_W, WINDOW_H);
+    initRenderer(&r,WINDOW_TITLE, WINDOW_W, WINDOW_H, true);
 
-    // glfwSetKeyCallback(r.window, keyPressCallback);
     glfwSetCursorPosCallback(r.window, mouseMoveCallback);
     glfwSetInputMode(r.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    
-    
     
     
     Shader terrainShader = compileShader("./shaders/terrain_vs.vert", "./shaders/terrain_fs.frag");
@@ -74,31 +65,42 @@ int main(){
         if (glfwGetKey(r.window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             break;
 
-
+        // clear screen
         clearScreen(&r, Vec4f{0,0.560,0.85,0});
 
-        uint32_t cameraMov = cameraUpdate(r.window);
-        
-        camera.updatePos(cameraMov, 100.0f);
-
+        // update camera
+        camera.updatePos(cameraUpdate(r.window), 100.0f);
+        // get lookat matrix
         Mat4 view = camera.lookat(camera.pos - camera.front, Vec3f{0,1,0});
-
+        
+        // projection matrix 
+        // (wanted to implement this myself tara didnt work for some reason)
+        // (so used glm to get the matrix (column major) and convert it to Mat4 (row major)) 
         glm::mat4x4 projs = glm::perspective(glm::radians(45.0f), (float)r.width/r.height, 0.1f,300.0f);
         Mat4 p = *((Mat4*)&projs);
         Mat4 proj = transpose(p);
 
+
+        // generate chunks procedurally
         proceduralGenerate(&gen, camera.pos, camera.front);
         
 
-
+        // draw the chunk meshes
         for (int i =0; i<gen.chunkObjects.size(); i++){
             Vec3f worldCoords = gen.chunkObjects[i].origin;
-            Vec3f chunkToCamera = normalize(camera.pos - worldCoords);
+            Vec3f chunkToCamera = camera.pos - worldCoords;
+
+            // compare direction with camera front
+            bool inView = dotProduct(normalize(chunkToCamera), camera.front) > 0.0f;
             
-            if (dotProduct(chunkToCamera, camera.front) < 0.0f) 
-                continue;
-            Mat4 model = translate(worldCoords.x,-10.0f, worldCoords.z);
-            drawMesh(&r, &gen.chunkObjects[i].mesh, &terrainShader, model, view, proj);
+            // see if chunk is within threshold 
+            const float threshold = 200.0f;            
+            bool withinRadius = dotProduct(chunkToCamera, chunkToCamera) < threshold * threshold;
+            
+            if (inView || withinRadius) {
+                Mat4 model = translate(worldCoords.x,-10.0f, worldCoords.z);
+                drawMesh(&r, &gen.chunkObjects[i].mesh, &terrainShader, model, view, proj);
+            }
         }
         glfwSwapBuffers(r.window);
     }
@@ -106,10 +108,6 @@ int main(){
 
     cleanup();
     
-
-
-
-
     return 0;
 }
 
@@ -117,15 +115,21 @@ int main(){
 
 
 uint32_t cameraUpdate(GLFWwindow *window){
+
+    auto iskeyPressed = [&](int keyCode)-> bool
+    {
+        return glfwGetKey(window, keyCode) == GLFW_PRESS;
+    };
+
     uint32_t movement = 0;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    if (iskeyPressed(GLFW_KEY_W))
         movement |= CameraMovement::FRONT;
-    else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    else if (iskeyPressed(GLFW_KEY_S))
         movement |= CameraMovement::BACK;
 
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    if (iskeyPressed(GLFW_KEY_A))
         movement |= CameraMovement::LEFT;
-    else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    else if (iskeyPressed(GLFW_KEY_D))
         movement |= CameraMovement::RIGHT;
 
     return(movement);
