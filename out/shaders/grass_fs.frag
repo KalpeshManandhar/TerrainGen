@@ -1,6 +1,5 @@
 #version 440 core
 
-in vec3 _pos;
 in vec4 _color;
 
 uniform sampler2D grass;

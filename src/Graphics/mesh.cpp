@@ -44,7 +44,6 @@ int createMesh(Mesh *m, Vec3f *vertices, int nvertices, uint32_t *indices, int n
     size_t verticesSize = sizeof(*vertices) * nvertices;
     size_t indicesSize = sizeof(*indices) * nindices;
 
-    TIME(startCopy);
 
 #ifdef y_ARRAY  // custom array
     m->vertices.useExisting(vertices, nvertices);
@@ -61,13 +60,8 @@ int createMesh(Mesh *m, Vec3f *vertices, int nvertices, uint32_t *indices, int n
 
 #endif
 
-    TIME(endCopy);
-    fprintf(stdout, "Time taken copy %lf\n", TIME_DIFF(startCopy, endCopy));
 
-    TIME(startGl);
     setupMesh(m);    
-    TIME(endGL);
-    fprintf(stdout, "Time taken create GL %lf\n", TIME_DIFF(startGl, endGL));
     return 0;
 }
 

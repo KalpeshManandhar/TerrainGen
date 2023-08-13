@@ -13,6 +13,8 @@ struct Renderer{
     GLFWwindow *window;
     uint32_t height;
     uint32_t width;
+
+    Shader *shader;
 };
 
 

@@ -14,16 +14,13 @@
 
 
 TerrainGenerator::TerrainGenerator(int dim, float scalex, float scalez){
-    initFreeList(&allocator, ALLOCATOR_INITIAL * PAGE_SIZE, CHUNK_SIZE*CHUNK_SIZE*sizeof(Vec3f));
+    initFreeList(&allocator, ALLOCATOR_INITIAL * PAGE_SIZE, dim*dim*sizeof(Vec3f));
     
     chunkGrid = (TerrainChunk *)malloc(CHUNK_GRID_DIM*CHUNK_GRID_DIM * sizeof(*chunkGrid));
     memset(chunkGrid, 0, CHUNK_GRID_DIM*CHUNK_GRID_DIM * sizeof(*chunkGrid));
     sizex = sizez = dim;
     scaleX = scalex;
     scaleZ = scalez;
-
-    chunkObjects.reserve(64*64*sizeof(Object3D));
-
     indices = getIndices(sizex, sizez);
 }
 
@@ -70,7 +67,9 @@ void generateNoiseMap(TerrainGenerator *gen, int w, int h){
 // just returns the generated chunk
 TerrainChunk addChunk(TerrainGenerator *gen, Vec3f chunkPos, float amplMultiplier){
     TerrainChunk chunk;
+
     chunk.vertices = (Vec3f *)freeListAlloc(&gen->allocator);
+
 
     // NOTE: could be multithreaded if needed
     auto sampleY = [&](int startIndex, int endIndex){
@@ -397,18 +396,19 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
             int sampleAtZ = (gridPos.y * 2)%gen->noiseMaph; 
             float noiseSample = 1.0f - gen->noiseMap[gridPos.x + gridPos.y * gen->noiseMapw] ;
 
-            yHeight = noiseSample * maxHeight;
             
-            int amplitudeNoise = noiseSample * INT32_MAX;
+            int amplitudeNoise = noiseSample * 1000;
             switch (amplitudeNoise % CHUNK_TYPE_COUNT)
             {
-                case CHUNK_MOUNTAIN: yAmplitude *= 30.0f; break;
+                case CHUNK_MOUNTAIN: yAmplitude *= 40.0f; break;
                 case CHUNK_HILL: yAmplitude *= 15.0f; break;
                 case CHUNK_PLAIN: yAmplitude *= 7.0f; break;
-                case CHUNK_VALLEY: yAmplitude *= -5.0f; break;
+                case CHUNK_VALLEY: yAmplitude *= -20.0f; break;
                 default: break;
             }
 
+            yHeight = noiseSample * maxHeight + yAmplitude;
+            yHeight = Min(yHeight, maxHeight);
 
             Vec3f chunkPos = {
                 gridPos.x * gen->sizex,

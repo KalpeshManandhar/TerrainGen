@@ -5,7 +5,7 @@
 #include <glfw/glfw3.h>
 #include "../math/vec.h"
 
-#define ERROR_CHECK(cond, message)  (!(cond) && printf(message))
+#define ERROR_CHECK(cond, message, ...)  (!(cond) && printf(message, __VA_ARGS__))
 #define glGetUniformLocation   glGetUniformLocation_ex
 
 
@@ -40,4 +40,4 @@ struct Shader {
 };
 
 
-Shader compileShader(const char* vertexShaderPath, const char* fragmentShaderPath);
+Shader compileShader(const char* vertexShaderPath, const char* fragmentShaderPath, const char *geometryShaderPath = NULL);

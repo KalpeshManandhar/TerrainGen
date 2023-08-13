@@ -41,7 +41,7 @@ void mouseMoveCallback(GLFWwindow* window, double xPosIn, double yPosIn){
 
 
 int main(){
-    TerrainGenerator gen(CHUNK_SIZE, 0.3f,0.3f);
+    TerrainGenerator gen(CHUNK_SIZE, 0.450f,0.450f);
     // generate noise map
     generateNoiseMap(&gen, 8*CHUNK_SIZE, 8*CHUNK_SIZE);
 
@@ -54,8 +54,10 @@ int main(){
     
     
     Shader terrainShader = compileShader("./shaders/terrain_vs.vert", "./shaders/terrain_fs.frag");
-
-
+    Shader grassShader = compileShader("./shaders/grass_vs.vert", "./shaders/grass_fs.frag", "./shaders/grass_gs.gs");
+    Shader sampledShader = compileShader("./shaders/sampled_vs.vert", "./shaders/sampled_fs.frag");
+    r.shader = &terrainShader;
+    
     
     camera.init({0,0,1},{0,1,0},{1,0,0}, 0.1f,100.0f, r.width, r.height);
     camera.pos = {0,0,3};
@@ -64,6 +66,16 @@ int main(){
         glfwPollEvents();
         if (glfwGetKey(r.window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             break;
+
+        {
+            if (glfwGetKey(r.window, GLFW_KEY_1) == GLFW_PRESS)
+                r.shader = &terrainShader;
+            if (glfwGetKey(r.window, GLFW_KEY_2) == GLFW_PRESS)
+                r.shader = &grassShader;
+            if (glfwGetKey(r.window, GLFW_KEY_3) == GLFW_PRESS)
+                r.shader = &sampledShader;
+        }
+
 
         // clear screen
         clearScreen(&r, Vec4f{0,0.560,0.85,0});
@@ -76,7 +88,7 @@ int main(){
         // projection matrix 
         // (wanted to implement this myself tara didnt work for some reason)
         // (so used glm to get the matrix (column major) and convert it to Mat4 (row major)) 
-        glm::mat4x4 projs = glm::perspective(glm::radians(45.0f), (float)r.width/r.height, 0.1f,300.0f);
+        glm::mat4x4 projs = glm::perspective(glm::radians(45.0f), (float)r.width/r.height, 0.1f,400.0f);
         Mat4 p = *((Mat4*)&projs);
         Mat4 proj = transpose(p);
 
@@ -94,12 +106,12 @@ int main(){
             bool inView = dotProduct(normalize(chunkToCamera), camera.front) > 0.0f;
             
             // see if chunk is within threshold 
-            const float threshold = 200.0f;            
+            const float threshold = gen.sizex;            
             bool withinRadius = dotProduct(chunkToCamera, chunkToCamera) < threshold * threshold;
             
             if (inView || withinRadius) {
-                Mat4 model = translate(worldCoords.x,-10.0f, worldCoords.z);
-                drawMesh(&r, &gen.chunkObjects[i].mesh, &terrainShader, model, view, proj);
+                Mat4 model = translate(worldCoords.x - 50.0f,-20.0f, worldCoords.z-40.f);
+                drawMesh(&r, &gen.chunkObjects[i].mesh, r.shader, model, view, proj);
             }
         }
         glfwSwapBuffers(r.window);
