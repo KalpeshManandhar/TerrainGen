@@ -41,7 +41,7 @@ void mouseMoveCallback(GLFWwindow* window, double xPosIn, double yPosIn){
 
 
 int main(){
-    TerrainGenerator gen(CHUNK_SIZE, 0.450f,0.450f);
+    TerrainGenerator gen(2*CHUNK_SIZE, 0.450f,0.450f);
     // generate noise map
     generateNoiseMap(&gen, 8*CHUNK_SIZE, 8*CHUNK_SIZE);
 
