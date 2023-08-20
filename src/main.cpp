@@ -110,7 +110,7 @@ int main(){
             bool withinRadius = dotProduct(chunkToCamera, chunkToCamera) < threshold * threshold;
             
             if (inView || withinRadius) {
-                Mat4 model = translate(worldCoords.x - 50.0f,-20.0f, worldCoords.z-40.f);
+                Mat4 model = translate(worldCoords.x,-20.0f, worldCoords.z);
                 drawMesh(&r, &gen.chunkObjects[i].mesh, r.shader, model, view, proj);
             }
         }

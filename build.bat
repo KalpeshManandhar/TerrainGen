@@ -19,7 +19,7 @@ set OUTPUT_DIR=.\out
 
 set SRC=.\src
 @REM set SOURCES=%SRC%\*.cpp %IMGUI_DIR%\*.cpp %GLAD_DIR%\src\glad.c
-set SOURCES=%SRC%\*.cpp %SRC%\math\*.cpp %GLAD_DIR%\src\glad.c
+set SOURCES=%SRC%\*.cpp %SRC%\math\*.cpp %SRC%\Allocator\*.cpp %SRC%\Graphics\*.cpp %GLAD_DIR%\src\glad.c
 
 mkdir %OUTPUT_DIR%
 

@@ -369,7 +369,7 @@ void stitchTerrain(TerrainGenerator *gen, TerrainChunk *a, TerrainChunk *b, int 
 
 
 void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFront){
-    Vec2i gridPosCamera = {cameraPos.x/(gen->scaleX * gen->sizex), cameraPos.z/(gen->scaleZ*gen->sizez)};
+    Vec2i gridPosCamera = {(int)(cameraPos.x/(gen->scaleX * gen->sizex)), (int)(cameraPos.z/(gen->scaleZ*gen->sizez))};
     
     const int viewChunkRange = 4;
     const float maxHeight = 500.0f;
@@ -411,14 +411,14 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
             yHeight = Min(yHeight, maxHeight);
 
             Vec3f chunkPos = {
-                gridPos.x * gen->sizex,
+                (float)gridPos.x * gen->sizex,
                 yHeight,
-                gridPos.y * gen->sizez, 
+                (float)gridPos.y * gen->sizez, 
             };
             Vec3f chunkPosWScale = {
-                gridPos.x * gen->sizex * gen->scaleX,
+                (float)gridPos.x * gen->sizex * gen->scaleX,
                 yHeight,
-                gridPos.y * gen->sizez * gen->scaleZ, 
+                (float)gridPos.y * gen->sizez * gen->scaleZ, 
             };
             
             // if chunk lies outside a threshold of the view of camera
