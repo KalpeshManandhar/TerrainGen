@@ -5,6 +5,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 
+// #include <imgui.h>
+// #include <backends/imgui_impl_glfw.h>
+// #include <backends/imgui_impl_opengl3.h>
+
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -52,6 +57,15 @@ int main(){
     glfwSetCursorPosCallback(r.window, mouseMoveCallback);
     glfwSetInputMode(r.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
+
+    // IMGUI_CHECKVERSION();
+    // ImGui::CreateContext();
+    // ImGuiIO& io = ImGui::GetIO(); (void)io;
+    // ImGui::StyleColorsDark();
+
+    // ImGui_ImplGlfw_InitForOpenGL(r.window, true);
+    // ImGui_ImplOpenGL3_Init("#version 440");
+
     
     Shader terrainShader = compileShader("./shaders/terrain_vs.vert", "./shaders/terrain_fs.frag");
     Shader grassShader = compileShader("./shaders/grass_vs.vert", "./shaders/grass_fs.frag", "./shaders/grass_gs.gs");
@@ -62,6 +76,9 @@ int main(){
     camera.init({0,0,1},{0,1,0},{1,0,0}, 0.1f,100.0f, r.width, r.height);
     camera.pos = {0,0,3};
     
+    Vec3f worldScale = {1.0f,1.0f,1.0f};
+    worldScale = worldScale * 2.0f;
+
     while (!glfwWindowShouldClose(r.window)){
         glfwPollEvents();
         if (glfwGetKey(r.window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -75,6 +92,8 @@ int main(){
             if (glfwGetKey(r.window, GLFW_KEY_3) == GLFW_PRESS)
                 r.shader = &sampledShader;
         }
+
+
 
 
         // clear screen
@@ -94,7 +113,7 @@ int main(){
 
 
         // generate chunks procedurally
-        proceduralGenerate(&gen, camera.pos, camera.front);
+        proceduralGenerate(&gen, camera.pos, camera.front, worldScale);
         
 
         // draw the chunk meshes
@@ -106,11 +125,12 @@ int main(){
             bool inView = dotProduct(normalize(chunkToCamera), camera.front) > 0.0f;
             
             // see if chunk is within threshold 
-            const float threshold = gen.sizex;            
+            const float threshold = gen.sizex * worldScale.x;            
             bool withinRadius = dotProduct(chunkToCamera, chunkToCamera) < threshold * threshold;
             
+            Mat4 scale = scaleAboutOrigin(worldScale.x, worldScale.y, worldScale.z);
             if (inView || withinRadius) {
-                Mat4 model = translate(worldCoords.x,-20.0f, worldCoords.z);
+                Mat4 model = translate(worldCoords.x * worldScale.x,-50.0f, worldCoords.z*worldScale.z) * scale;
                 drawMesh(&r, &gen.chunkObjects[i].mesh, r.shader, model, view, proj);
             }
         }
