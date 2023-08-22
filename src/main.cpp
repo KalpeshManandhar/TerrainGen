@@ -68,7 +68,7 @@ int main(){
 
     
     Shader terrainShader = compileShader("./shaders/terrain_vs.vert", "./shaders/terrain_fs.frag");
-    Shader grassShader = compileShader("./shaders/grass_vs.vert", "./shaders/grass_fs.frag", "./shaders/grass_gs.gs");
+    Shader grasShader = compileShader("./shaders/grass_vs.vert", "./shaders/grass_fs.frag", "./shaders/grass_gs.gs");
     Shader sampledShader = compileShader("./shaders/sampled_vs.vert", "./shaders/sampled_fs.frag");
     r.shader = &terrainShader;
     
@@ -88,7 +88,7 @@ int main(){
             if (glfwGetKey(r.window, GLFW_KEY_1) == GLFW_PRESS)
                 r.shader = &terrainShader;
             if (glfwGetKey(r.window, GLFW_KEY_2) == GLFW_PRESS)
-                r.shader = &grassShader;
+                r.shader = &grasShader;
             if (glfwGetKey(r.window, GLFW_KEY_3) == GLFW_PRESS)
                 r.shader = &sampledShader;
         }
@@ -116,19 +116,21 @@ int main(){
         proceduralGenerate(&gen, camera.pos, camera.front, worldScale);
         
 
+        Mat4 scale = scaleAboutOrigin(worldScale.x, worldScale.y, worldScale.z);
+        
+        
         // draw the chunk meshes
         for (int i =0; i<gen.chunkObjects.size(); i++){
             Vec3f worldCoords = gen.chunkObjects[i].origin;
             Vec3f chunkToCamera = camera.pos - worldCoords;
 
             // compare direction with camera front
-            bool inView = dotProduct(normalize(chunkToCamera), camera.front) > 0.0f;
+            bool inView = dotProduct(normalize(chunkToCamera), camera.front) >= -1.25f;
             
             // see if chunk is within threshold 
-            const float threshold = gen.sizex * worldScale.x;            
+            const float threshold = 2* gen.sizex * worldScale.x;            
             bool withinRadius = dotProduct(chunkToCamera, chunkToCamera) < threshold * threshold;
             
-            Mat4 scale = scaleAboutOrigin(worldScale.x, worldScale.y, worldScale.z);
             if (inView || withinRadius) {
                 Mat4 model = translate(worldCoords.x * worldScale.x,-50.0f, worldCoords.z*worldScale.z) * scale;
                 drawMesh(&r, &gen.chunkObjects[i].mesh, r.shader, model, view, proj);

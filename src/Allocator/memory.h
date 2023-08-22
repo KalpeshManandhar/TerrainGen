@@ -9,6 +9,7 @@
 
 #ifdef __linux__
 #define PLATFORM_LINUX
+#include <sys/mman.h>
 #endif
 
 #define PAGE_SIZE 4096
@@ -25,8 +26,8 @@ static inline void *osAlloc(size_t size){
 #endif
 
 #ifdef PLATFORM_LINUX
-    //i dont use linux sorry
-    memory = mmap();
+    //i dont use linux sorry might not work
+    memory = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE,NULl, 0);
 #endif
     return(memory);
 }
@@ -38,6 +39,6 @@ static inline void osFree(void *address, size_t size){
 
 #ifdef PLATFORM_LINUX
     //i dont use linux sorry
-    memory = munmap();
+    memory = munmap(address, size);
 #endif
 }

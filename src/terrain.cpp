@@ -371,6 +371,7 @@ void stitchTerrain(TerrainGenerator *gen, TerrainChunk *a, TerrainChunk *b, int 
 void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFront, Vec3f worldScale){
     Vec2i gridPosCamera = {(int)(cameraPos.x/(worldScale.x * gen->scaleX * gen->sizex)), (int)(cameraPos.z/(worldScale.z *gen->scaleZ*gen->sizez))};
     
+    
     const int viewChunkRange = 4;
     const float maxHeight = 500.0f;
     
@@ -425,8 +426,8 @@ void proceduralGenerate(TerrainGenerator *gen, Vec3f cameraPos, Vec3f cameraFron
             // camera front is TOWARDS the camera not the direction camera is looking in
             Vec3f chunkToCamera = normalize(cameraPos - chunkPosWScale);
             const float similarityThreshold = 0.25;
-            if (dotProduct(chunkToCamera, cameraFront) < similarityThreshold)
-                continue;
+            // if (dotProduct(chunkToCamera, cameraFront) < similarityThreshold)
+            //     continue;
             
 
             gen->chunkGrid[gridPos.x + gridPos.y * gen->sizez] = addChunk(gen, chunkPos, yAmplitude);

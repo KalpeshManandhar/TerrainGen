@@ -14,11 +14,11 @@ float random (in vec2 _st) {
 
 void main() {
     const vec4 moss[]={
-        vec4(0.19f, 0.2f, 0f, 1f),
-        vec4(0.48f, 0.51f, 0.34f, 1f),
-        vec4(0.2f, 0.21f, 0.14f, 1f),
-        vec4(0.32f, 0.4f, 0.11f, 1f),
-        vec4(0.56f, 0.61f, 0.45f, 1f),
+        vec4(0.19f, 0.2f, 0.0f, 1.0f),
+        vec4(0.48f, 0.51f, 0.34f, 1.0f),
+        vec4(0.2f, 0.21f, 0.14f, 1.0f),
+        vec4(0.32f, 0.4f, 0.11f, 1.0f),
+        vec4(0.56f, 0.61f, 0.45f, 1.0f),
     };
 
     int index = int(_pos[0].y*1000)%6;
